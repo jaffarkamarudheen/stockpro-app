@@ -1,0 +1,53 @@
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Foundation\Http\FormRequest;
+
+class StoreCheckoutRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        // Support quick checkout from mobile scanner with direct product_id and quantity
+        if ($this->has('product_id') && ! $this->has('items')) {
+            $this->merge([
+                'items' => [
+                    [
+                        'product_id' => $this->input('product_id'),
+                        'quantity' => $this->input('quantity', 1),
+                        'unit_sale_rate' => $this->input('unit_sale_rate'),
+                    ],
+                ],
+            ]);
+        }
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        return [
+            'customer_name' => ['required', 'string', 'max:255'],
+            'customer_address' => ['required', 'string'],
+            'customer_phone' => ['nullable', 'string', 'max:50'],
+            'enquiry_from' => ['required', 'string', 'max:100'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.unit_sale_rate' => ['nullable', 'numeric', 'min:0'],
+        ];
+    }
+}
