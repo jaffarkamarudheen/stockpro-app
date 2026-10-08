@@ -33,13 +33,26 @@ php artisan config:clear || true
 # Generate symlink for public uploads
 php artisan storage:link || true
 
-# Run database migrations and seeding for PostgreSQL
-if [ -n "$DATABASE_URL" ] || [ "$DB_CONNECTION" = "pgsql" ]; then
-    echo "Running database migrations..."
-    php artisan migrate --force --no-interaction || true
-    echo "Running initial seeder for admin and default data..."
-    php artisan db:seed --force --no-interaction || true
+# Ensure database directory and SQLite file exist with proper permissions as fallback
+mkdir -p /var/www/html/database
+if [ ! -f /var/www/html/database/database.sqlite ]; then
+    touch /var/www/html/database/database.sqlite
 fi
+chown -R www-data:www-data /var/www/html/database
+chmod -R 775 /var/www/html/database
+chmod 664 /var/www/html/database/database.sqlite
+
+# If DATABASE_URL is provided, use pgsql connection
+if [ -n "$DATABASE_URL" ]; then
+    export DB_CONNECTION=pgsql
+fi
+
+# Run database migrations and seeding
+echo "Running database migrations for ${DB_CONNECTION:-sqlite}..."
+php artisan migrate --force --no-interaction || true
+echo "Running initial database seeder for admin and initial data..."
+php artisan db:seed --force --no-interaction || true
+
 
 # Execute main Apache foreground process
 echo "Starting Apache on port ${PORT}..."
