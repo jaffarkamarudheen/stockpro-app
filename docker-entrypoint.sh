@@ -42,10 +42,22 @@ chown -R www-data:www-data /var/www/html/database
 chmod -R 775 /var/www/html/database
 chmod 664 /var/www/html/database/database.sqlite
 
-# If DATABASE_URL is provided, use pgsql connection
+# If DATABASE_URL is provided, configure PostgreSQL into .env and Apache
 if [ -n "$DATABASE_URL" ]; then
     export DB_CONNECTION=pgsql
+    sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=pgsql/' /var/www/html/.env 2>/dev/null || true
+    if ! grep -q "^DATABASE_URL=" /var/www/html/.env; then
+        echo "DATABASE_URL=\"$DATABASE_URL\"" >> /var/www/html/.env
+    fi
+    echo "PostgreSQL DATABASE_URL detected. Configured in .env and environment."
 fi
+
+# Ensure .env is readable by Apache
+chmod 644 /var/www/html/.env 2>/dev/null || true
+
+# Pass environment variables to Apache web server workers
+echo "PassEnv DATABASE_URL DB_CONNECTION APP_KEY APP_ENV APP_DEBUG" > /etc/apache2/conf-available/docker-env.conf
+a2enconf docker-env 2>/dev/null || true
 
 # Run database migrations and seeding
 echo "Running database migrations for ${DB_CONNECTION:-sqlite}..."
