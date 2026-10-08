@@ -36,12 +36,20 @@ WORKDIR /var/www/html
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Copy application source
 COPY . /var/www/html
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Create temporary .env from example so artisan commands don't fail
+RUN cp .env.example .env
+
+# Install PHP dependencies without running build-time artisan scripts
+RUN composer install --no-dev --no-interaction --no-scripts --optimize-autoloader
+
+# Run package discover now that vendor is installed and .env exists
+RUN php artisan package:discover --ansi || true
+
 
 # Set directory permissions for Laravel storage & cache
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \

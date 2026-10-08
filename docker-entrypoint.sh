@@ -25,6 +25,11 @@ if [ -z "$APP_KEY" ]; then
     php artisan key:generate --force --no-interaction || true
 fi
 
+# Discover packages and ensure clean configuration
+php artisan package:discover --ansi || true
+php artisan config:clear || true
+
+
 # Generate symlink for public uploads
 php artisan storage:link || true
 
