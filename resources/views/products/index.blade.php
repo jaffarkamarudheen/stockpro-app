@@ -70,6 +70,12 @@
                 </select>
             @endif
 
+            <select name="per_page" class="py-2 px-3 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
+                <option value="50" {{ request('per_page', '50') === '50' ? 'selected' : '' }}>Show 50 Products</option>
+                <option value="100" {{ request('per_page') === '100' ? 'selected' : '' }}>Show 100 Products</option>
+                <option value="all" {{ request('per_page') === 'all' ? 'selected' : '' }}>Show All Products</option>
+            </select>
+
             <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition">
                 Filter
             </button>
@@ -118,7 +124,7 @@
 
                             <!-- Product Name & Number -->
                             <td class="px-4 py-3">
-                                <div class="font-bold text-slate-800">{{ $product->name }}</div>
+                                <div class="font-bold text-slate-800 text-sm">{{ $product->name }}</div>
                                 <div class="flex items-center gap-1.5 flex-wrap mt-1">
                                     <span class="font-mono text-xs text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded">
                                         {{ $product->product_number }}
@@ -129,23 +135,29 @@
                                             {{ $product->user_name ?? $product->user->name }}
                                         </span>
                                     @endif
+                                    <span class="text-[10px] text-slate-400">
+                                        <i class="fa-regular fa-calendar text-[9px]"></i> {{ $product->created_at->format('M d, Y') }}
+                                    </span>
                                 </div>
                                 @if ($product->description)
-                                    <div class="text-xs text-slate-400 truncate max-w-xs mt-1">{{ $product->description }}</div>
+                                    <div class="text-xs text-slate-500 line-clamp-2 max-w-sm mt-1 bg-slate-50 p-1.5 rounded border border-slate-100">{{ $product->description }}</div>
                                 @endif
                             </td>
 
                             <!-- Quality -->
                             <td class="px-4 py-3 whitespace-nowrap">
-                                <span class="px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-700">
+                                <span class="px-2.5 py-1 rounded text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                                     {{ $product->quality ?: 'Standard' }}
                                 </span>
                             </td>
 
                             <!-- Rates Breakdown -->
                             <td class="px-4 py-3 text-right whitespace-nowrap">
-                                <div class="text-xs space-y-0.5">
-                                    <div><span class="text-slate-400">Sale:</span> <strong class="text-slate-800">₹{{ number_format($product->sale_rate, 2) }}</strong></div>
+                                <div class="text-xs space-y-1">
+                                    @if ($product->price > 0 && $product->price != $product->sale_rate)
+                                        <div><span class="text-slate-400">MRP:</span> <span class="line-through text-slate-400">₹{{ number_format($product->price, 2) }}</span></div>
+                                    @endif
+                                    <div><span class="text-slate-500 font-medium">Sale:</span> <strong class="text-slate-900 font-bold text-sm">₹{{ number_format($product->sale_rate, 2) }}</strong></div>
                                     <div><span class="text-slate-400">Cost:</span> ₹{{ number_format($product->purchase_rate, 2) }}</div>
                                     @if ($product->other_rate > 0)
                                         <div><span class="text-slate-400">Other:</span> ₹{{ number_format($product->other_rate, 2) }}</div>
@@ -155,9 +167,16 @@
 
                             <!-- Auto Profit -->
                             <td class="px-4 py-3 text-right whitespace-nowrap">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold {{ $product->profit_per_unit >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800' }}">
-                                    +₹{{ number_format($product->profit_per_unit, 2) }}
-                                </span>
+                                <div>
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold {{ $product->profit_per_unit >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800' }}">
+                                        +₹{{ number_format($product->profit_per_unit, 2) }}
+                                    </span>
+                                    @if ($product->sale_rate > 0)
+                                        <div class="text-[10px] text-emerald-600 font-semibold mt-0.5">
+                                            {{ round(($product->profit_per_unit / $product->sale_rate) * 100, 1) }}% margin
+                                        </div>
+                                    @endif
+                                </div>
                             </td>
 
                             <!-- Stock Status -->
@@ -172,6 +191,7 @@
                                         <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                                         Low: {{ $product->stock_quantity }} units
                                     </span>
+                                    <div class="text-[10px] text-amber-600 mt-0.5">Alert at &le; {{ $product->low_stock_threshold }}</div>
                                 @else
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>

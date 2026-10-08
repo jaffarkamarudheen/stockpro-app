@@ -41,7 +41,8 @@ class ProductController extends Controller
             $query->where('user_id', $userId);
         }
 
-        $products = $query->paginate(12)->withQueryString();
+        $perPage = $request->input('per_page') === 'all' ? 500 : (int) $request->input('per_page', 50);
+        $products = $query->with('user')->paginate($perPage)->withQueryString();
 
         $stats = [
             'total' => Product::count(),
