@@ -41,7 +41,10 @@
             @endif
             @auth
                 <div class="flex items-center gap-1.5 pl-1">
-                    <span class="text-xs text-slate-300 font-medium hidden sm:inline">{{ auth()->user()->name }}</span>
+                    <span class="text-xs text-emerald-400 font-semibold flex items-center gap-1 bg-slate-800/90 px-2.5 py-1 rounded-lg border border-slate-700">
+                        <i class="fa-solid fa-user-check text-[10px]"></i>
+                        <span>{{ auth()->user()->name }}</span>
+                    </span>
                     <form action="{{ route('logout') }}" method="POST" class="inline">
                         @csrf
                         <button type="submit" class="p-1.5 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition" title="Logout">
@@ -216,11 +219,17 @@
                     </div>
 
                     <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-wrap">
                             <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold"
                                   x-text="activeProduct.product_number"></span>
                             <span class="text-[11px] px-2 py-0.5 rounded font-semibold bg-slate-800 text-slate-300"
                                   x-text="activeProduct.quality || 'Standard'"></span>
+                            <template x-if="activeProduct.user_name">
+                                <span class="text-[10px] px-2 py-0.5 rounded font-medium bg-slate-800 text-slate-300 flex items-center gap-1 border border-slate-700">
+                                    <i class="fa-solid fa-user-tag text-[9px] text-indigo-400"></i>
+                                    <span x-text="'By: ' + activeProduct.user_name"></span>
+                                </span>
+                            </template>
                         </div>
                         <h3 class="text-base font-bold text-white mt-1.5 leading-snug" x-text="activeProduct.name"></h3>
                         <p class="text-xs text-slate-400 mt-1 line-clamp-2" x-text="activeProduct.description || 'No description provided.'"></p>

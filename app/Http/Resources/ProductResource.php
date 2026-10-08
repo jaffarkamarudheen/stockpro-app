@@ -29,6 +29,8 @@ class ProductResource extends JsonResource
             'low_stock_threshold' => (int) $this->low_stock_threshold,
             'stock_status' => $this->stock_status,
             'description' => $this->description,
+            'user_id' => $this->user_id,
+            'user_name' => $this->user_name,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

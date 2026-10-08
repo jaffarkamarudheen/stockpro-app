@@ -8,6 +8,7 @@ use App\Models\Checkout;
 use App\Models\CheckoutItem;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +42,10 @@ class CheckoutController extends Controller
             $query->whereDate('created_at', '<=', $to);
         }
 
+        if ($userId = $request->input('user_id')) {
+            $query->where('user_id', $userId);
+        }
+
         $checkouts = $query->paginate(15)->withQueryString();
 
         $enquirySources = Checkout::select('enquiry_from')
@@ -48,11 +53,13 @@ class CheckoutController extends Controller
             ->whereNotNull('enquiry_from')
             ->pluck('enquiry_from');
 
+        $users = User::orderBy('name')->get();
+
         $totalSales = Checkout::sum('total_sale_amount');
         $totalProfit = Checkout::sum('total_profit');
         $totalOrders = Checkout::count();
 
-        return view('checkouts.index', compact('checkouts', 'enquirySources', 'totalSales', 'totalProfit', 'totalOrders'));
+        return view('checkouts.index', compact('checkouts', 'enquirySources', 'totalSales', 'totalProfit', 'totalOrders', 'users'));
     }
 
     public function create(): View

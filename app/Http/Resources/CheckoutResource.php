@@ -27,6 +27,8 @@ class CheckoutResource extends JsonResource
             'total_other_cost' => (float) $this->total_other_cost,
             'total_profit' => (float) $this->total_profit,
             'notes' => $this->notes,
+            'user_id' => $this->user_id,
+            'user_name' => $this->user_name,
             'items' => $this->whenLoaded('items', function () {
                 return $this->items->map(function ($item) {
                     return [

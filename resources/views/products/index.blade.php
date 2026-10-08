@@ -59,11 +59,22 @@
                 <option value="out_of_stock" {{ request('status') === 'out_of_stock' ? 'selected' : '' }}>Out of Stock</option>
             </select>
 
+            @if(isset($users) && $users->count() > 0)
+                <select name="user_id" class="py-2 px-3 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
+                    <option value="">All Users / Creators</option>
+                    @foreach($users as $user)
+                        <option value="{{ $user->id }}" {{ (string)request('user_id') === (string)$user->id ? 'selected' : '' }}>
+                            {{ $user->name }}
+                        </option>
+                    @endforeach
+                </select>
+            @endif
+
             <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition">
                 Filter
             </button>
 
-            @if (request()->hasAny(['search', 'status']))
+            @if (request()->hasAny(['search', 'status', 'user_id']))
                 <a href="{{ route('products.index') }}" class="px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition">
                     Clear
                 </a>
@@ -108,8 +119,16 @@
                             <!-- Product Name & Number -->
                             <td class="px-4 py-3">
                                 <div class="font-bold text-slate-800">{{ $product->name }}</div>
-                                <div class="font-mono text-xs text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded inline-block mt-0.5">
-                                    {{ $product->product_number }}
+                                <div class="flex items-center gap-1.5 flex-wrap mt-1">
+                                    <span class="font-mono text-xs text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded">
+                                        {{ $product->product_number }}
+                                    </span>
+                                    @if ($product->user_name || $product->user)
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded" title="Added by user">
+                                            <i class="fa-solid fa-user-tag text-[9px] text-slate-400"></i>
+                                            {{ $product->user_name ?? $product->user->name }}
+                                        </span>
+                                    @endif
                                 </div>
                                 @if ($product->description)
                                     <div class="text-xs text-slate-400 truncate max-w-xs mt-1">{{ $product->description }}</div>

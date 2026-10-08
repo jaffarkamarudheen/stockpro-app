@@ -39,6 +39,11 @@
                 <div class="text-xs uppercase font-bold tracking-wider text-slate-400">Checkout Invoice</div>
                 <div class="font-mono text-base font-bold text-indigo-600">{{ $checkout->order_number }}</div>
                 <div class="text-xs text-slate-500 mt-1">Date: {{ $checkout->created_at->format('M d, Y - h:i A') }}</div>
+                @if ($checkout->user_name || $checkout->user)
+                    <div class="text-xs text-slate-600 mt-1 font-medium">
+                        Processed by: <span class="text-slate-900 font-semibold">{{ $checkout->user_name ?? $checkout->user->name }}</span>
+                    </div>
+                @endif
             </div>
         </div>
 

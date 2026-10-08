@@ -66,11 +66,22 @@
             <input type="date" name="date_to" value="{{ request('date_to') }}" title="Date To"
                    class="py-2 px-3 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
 
+            @if(isset($users) && $users->count() > 0)
+                <select name="user_id" class="py-2 px-3 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                    <option value="">All Cashiers / Users</option>
+                    @foreach ($users as $user)
+                        <option value="{{ $user->id }}" {{ (string)request('user_id') === (string)$user->id ? 'selected' : '' }}>
+                            {{ $user->name }}
+                        </option>
+                    @endforeach
+                </select>
+            @endif
+
             <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition">
                 Filter
             </button>
 
-            @if (request()->hasAny(['search', 'enquiry_from', 'date_from', 'date_to']))
+            @if (request()->hasAny(['search', 'enquiry_from', 'date_from', 'date_to', 'user_id']))
                 <a href="{{ route('checkouts.index') }}" class="px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition">
                     Clear
                 </a>
@@ -109,6 +120,12 @@
                                 <div class="text-xs text-slate-400 mt-0.5">
                                     {{ $checkout->created_at->format('M d, Y - h:i A') }}
                                 </div>
+                                @if ($checkout->user_name || $checkout->user)
+                                    <div class="text-[11px] font-medium text-slate-600 flex items-center gap-1 mt-1">
+                                        <i class="fa-solid fa-user-check text-[9px] text-indigo-500"></i>
+                                        <span>{{ $checkout->user_name ?? $checkout->user->name }}</span>
+                                    </div>
+                                @endif
                             </td>
 
                             <!-- Buyer Details -->

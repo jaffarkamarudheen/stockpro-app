@@ -5,6 +5,7 @@ namespace App\Models;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
@@ -16,6 +17,8 @@ class Product extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'user_id',
+        'user_name',
         'product_number',
         'name',
         'photo_path',
@@ -34,6 +37,7 @@ class Product extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'user_id' => 'integer',
         'price' => 'decimal:2',
         'purchase_rate' => 'decimal:2',
         'sale_rate' => 'decimal:2',
@@ -53,12 +57,24 @@ class Product extends Model
 
     protected static function booted(): void
     {
+        static::creating(function (Product $product): void {
+            if (empty($product->user_id) && auth()->check()) {
+                $product->user_id = auth()->id();
+                $product->user_name = auth()->user()->name;
+            }
+        });
+
         static::saving(function (Product $product): void {
             $purchase = (float) ($product->purchase_rate ?? 0);
             $sale = (float) ($product->sale_rate ?? 0);
             $other = (float) ($product->other_rate ?? 0);
             $product->profit_per_unit = round($sale - $purchase - $other, 2);
         });
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function getPhotoUrlAttribute(): ?string

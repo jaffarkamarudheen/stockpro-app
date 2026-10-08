@@ -16,6 +16,7 @@ class StockMovement extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'user_id',
         'product_id',
         'type', // CHECK_IN, CHECK_OUT, ADJUSTMENT
         'quantity',
@@ -27,8 +28,23 @@ class StockMovement extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'user_id' => 'integer',
         'quantity' => 'integer',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (StockMovement $movement): void {
+            if (empty($movement->user_id) && auth()->check()) {
+                $movement->user_id = auth()->id();
+            }
+        });
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 
     /**
      * @return BelongsTo<Product, $this>

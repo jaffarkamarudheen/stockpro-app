@@ -6,6 +6,7 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\ActivityLog;
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -36,6 +37,10 @@ class ProductController extends Controller
             }
         }
 
+        if ($userId = $request->input('user_id')) {
+            $query->where('user_id', $userId);
+        }
+
         $products = $query->paginate(12)->withQueryString();
 
         $stats = [
@@ -45,7 +50,9 @@ class ProductController extends Controller
             'out_of_stock' => Product::where('stock_quantity', '<=', 0)->count(),
         ];
 
-        return view('products.index', compact('products', 'stats'));
+        $users = User::orderBy('name')->get();
+
+        return view('products.index', compact('products', 'stats', 'users'));
     }
 
     public function create(): View
