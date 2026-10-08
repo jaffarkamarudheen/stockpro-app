@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     libjpeg62-turbo-dev \
     libfreetype6-dev \
     libzip-dev \
+    libicu-dev \
     zip \
     unzip \
     git \
@@ -19,6 +20,7 @@ RUN apt-get update && apt-get install -y \
         gd \
         zip \
         bcmath \
+        intl \
         opcache \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -37,6 +39,7 @@ WORKDIR /var/www/html
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV COMPOSER_MEMORY_LIMIT=-1
 
 # Copy application source
 COPY . /var/www/html
@@ -44,11 +47,12 @@ COPY . /var/www/html
 # Create temporary .env from example so artisan commands don't fail
 RUN cp .env.example .env
 
-# Install PHP dependencies without running build-time artisan scripts
-RUN composer install --no-dev --no-interaction --no-scripts --optimize-autoloader
+# Install PHP dependencies without running build-time artisan scripts and ignoring platform reqs
+RUN composer install --no-dev --no-interaction --no-scripts --optimize-autoloader --ignore-platform-reqs
 
 # Run package discover now that vendor is installed and .env exists
 RUN php artisan package:discover --ansi || true
+
 
 
 # Set directory permissions for Laravel storage & cache
