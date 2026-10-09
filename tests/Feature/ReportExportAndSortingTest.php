@@ -79,6 +79,21 @@ class ReportExportAndSortingTest extends TestCase
         $response->assertSee('Cherry Adorn');
     }
 
+    public function test_reports_page_renders_with_product_sales_breakdown(): void
+    {
+        $product = Product::factory()->create([
+            'name' => 'Kundan Choker',
+            'product_number' => 'KC-001',
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('reports.index'));
+
+        $response->assertOk();
+        $response->assertSee('Kundan Choker');
+        $response->assertSee('KC-001');
+        $response->assertSee('Product Sales & Profit Breakdown', false);
+    }
+
     public function test_product_sales_csv_and_pdf_export_work(): void
     {
         $product = Product::factory()->create([

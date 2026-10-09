@@ -353,7 +353,7 @@ class ReportController extends Controller
 
     protected function getProductSalesData(int $selectedYear, ?string $selectedMonth)
     {
-        return Product::withCount(['checkoutItems as units_sold' => function ($q) use ($selectedYear, $selectedMonth) {
+        return Product::withSum(['checkoutItems as units_sold' => function ($q) use ($selectedYear, $selectedMonth) {
             $q->whereHas('checkout', function ($c) use ($selectedYear, $selectedMonth) {
                 $c->where('is_promotion', false)
                     ->whereYear('created_at', $selectedYear);
@@ -361,7 +361,7 @@ class ReportController extends Controller
                     $c->whereMonth('created_at', (int) $selectedMonth);
                 }
             });
-        }])->withSum(['checkoutItems as total_revenue' => function ($q) use ($selectedYear, $selectedMonth) {
+        }], 'quantity')->withSum(['checkoutItems as total_revenue' => function ($q) use ($selectedYear, $selectedMonth) {
             $q->whereHas('checkout', function ($c) use ($selectedYear, $selectedMonth) {
                 $c->where('is_promotion', false)
                     ->whereYear('created_at', $selectedYear);
@@ -381,6 +381,13 @@ class ReportController extends Controller
             }], 'subtotal_profit')
             ->orderByDesc('units_sold')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->map(function ($product) {
+                $product->units_sold = (int) ($product->units_sold ?? 0);
+                $product->total_revenue = (float) ($product->total_revenue ?? 0.0);
+                $product->total_profit_generated = (float) ($product->total_profit_generated ?? 0.0);
+
+                return $product;
+            });
     }
 }

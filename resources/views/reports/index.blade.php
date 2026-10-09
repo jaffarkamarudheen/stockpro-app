@@ -238,35 +238,38 @@
                         $totRev = 0;
                         $totProf = 0;
                     @endphp
-                    @forelse ($productSalesData as $ps)
+                    @forelse ($productSalesData as $item)
                         @php
-                            $totUnits += $ps['units_sold'];
-                            $totRev += $ps['revenue'];
-                            $totProf += $ps['profit'];
+                            $uSold = (int) ($item->units_sold ?? 0);
+                            $rev = (float) ($item->total_revenue ?? 0.0);
+                            $prof = (float) ($item->total_profit_generated ?? 0.0);
+                            $totUnits += $uSold;
+                            $totRev += $rev;
+                            $totProf += $prof;
                         @endphp
-                        <tr class="hover:bg-slate-50/80 transition {{ $ps['units_sold'] > 0 ? 'bg-white' : 'bg-slate-50/30' }}">
+                        <tr class="hover:bg-slate-50/80 transition {{ $uSold > 0 ? 'bg-white' : 'bg-slate-50/30' }}">
                             <td class="px-4 py-3">
-                                <div class="font-bold text-slate-800">{{ $ps['product']->name }}</div>
-                                <div class="font-mono text-xs text-slate-400">{{ $ps['product']->product_number }}</div>
+                                <div class="font-bold text-slate-800">{{ $item->name }}</div>
+                                <div class="font-mono text-xs text-slate-400">{{ $item->product_number }}</div>
                             </td>
-                            <td class="px-4 py-3 text-center font-semibold {{ $ps['product']->stock_quantity <= 0 ? 'text-rose-600' : 'text-slate-700' }}">
-                                {{ $ps['product']->stock_quantity }}
+                            <td class="px-4 py-3 text-center font-semibold {{ $item->stock_quantity <= 0 ? 'text-rose-600' : 'text-slate-700' }}">
+                                {{ $item->stock_quantity }}
                             </td>
                             <td class="px-4 py-3 text-center font-bold text-indigo-700">
-                                {{ $ps['units_sold'] }}
+                                {{ $uSold }}
                             </td>
                             <td class="px-4 py-3 text-right text-slate-600">
-                                ₹{{ number_format($ps['product']->sale_rate, 2) }}
+                                ₹{{ number_format($item->sale_rate, 2) }}
                             </td>
                             <td class="px-4 py-3 text-right font-medium text-slate-800">
-                                ₹{{ number_format($ps['revenue'], 2) }}
+                                ₹{{ number_format($rev, 2) }}
                             </td>
-                            <td class="px-4 py-3 text-right font-bold {{ $ps['profit'] >= 0 ? 'text-emerald-600' : 'text-rose-600' }}">
-                                {{ $ps['profit'] >= 0 ? '+' : '' }}₹{{ number_format($ps['profit'], 2) }}
+                            <td class="px-4 py-3 text-right font-bold {{ $prof >= 0 ? 'text-emerald-600' : 'text-rose-600' }}">
+                                {{ $prof >= 0 ? '+' : '' }}₹{{ number_format($prof, 2) }}
                             </td>
                             <td class="px-4 py-3 text-right text-xs text-slate-500">
-                                @if ($ps['revenue'] > 0)
-                                    {{ number_format(($ps['profit'] / $ps['revenue']) * 100, 1) }}%
+                                @if ($rev > 0)
+                                    {{ number_format(($prof / $rev) * 100, 1) }}%
                                 @else
                                     —
                                 @endif
