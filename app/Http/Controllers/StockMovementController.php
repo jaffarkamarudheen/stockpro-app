@@ -15,7 +15,7 @@ class StockMovementController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = StockMovement::with('product')->latest();
+        $query = StockMovement::with('product');
 
         if ($type = $request->input('type')) {
             $query->where('type', $type);
@@ -28,7 +28,29 @@ class StockMovementController extends Controller
             });
         }
 
-        $movements = $query->paginate(15)->withQueryString();
+        $sort = $request->input('sort', 'latest');
+        switch ($sort) {
+            case 'oldest':
+                $query->orderBy('created_at', 'asc')->orderBy('id', 'asc');
+                break;
+            case 'quantity_desc':
+                $query->orderBy('quantity', 'desc');
+                break;
+            case 'quantity_asc':
+                $query->orderBy('quantity', 'asc');
+                break;
+            case 'latest':
+            default:
+                $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
+                break;
+        }
+
+        $perPage = (int) $request->input('per_page', 15);
+        if (! in_array($perPage, [10, 15, 25, 50, 100], true)) {
+            $perPage = 15;
+        }
+
+        $movements = $query->paginate($perPage)->withQueryString();
         $products = Product::orderBy('name')->get();
 
         return view('stock.index', compact('movements', 'products'));

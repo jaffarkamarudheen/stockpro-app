@@ -64,9 +64,11 @@ class ProductApiController extends Controller
 
         if ($request->hasFile('photo')) {
             $validated['photo_path'] = Product::processImage($request->file('photo'));
+        } elseif (! empty($validated['photo_url_input'])) {
+            $validated['photo_path'] = $validated['photo_url_input'];
         }
 
-        unset($validated['photo']);
+        unset($validated['photo'], $validated['photo_url_input']);
 
         $product = Product::create($validated);
 
@@ -84,9 +86,11 @@ class ProductApiController extends Controller
                 Storage::disk('public')->delete($product->photo_path);
             }
             $validated['photo_path'] = Product::processImage($request->file('photo'));
+        } elseif (! empty($validated['photo_url_input'])) {
+            $validated['photo_path'] = $validated['photo_url_input'];
         }
 
-        unset($validated['photo']);
+        unset($validated['photo'], $validated['photo_url_input']);
 
         $product->update($validated);
 

@@ -21,28 +21,44 @@
 
     <!-- Filters -->
     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center gap-3">
-        <form method="GET" action="{{ route('stock.index') }}" class="flex flex-wrap items-center gap-3 w-full">
+        <form method="GET" action="{{ route('stock.index') }}" class="flex flex-wrap items-center gap-2.5 w-full">
             <div class="relative flex-1 min-w-[200px]">
                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </span>
                 <input type="text" name="search" value="{{ request('search') }}"
                        placeholder="Search product name or code..."
-                       class="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                       class="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
 
-            <select name="type" class="py-2 px-3 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+            <select name="type" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
                 <option value="">All Movement Types</option>
                 <option value="CHECK_IN" {{ request('type') === 'CHECK_IN' ? 'selected' : '' }}>Check-In (Inward +)</option>
                 <option value="CHECK_OUT" {{ request('type') === 'CHECK_OUT' ? 'selected' : '' }}>Check-Out (Sales -)</option>
             </select>
 
-            <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition">
+            <!-- Sort By -->
+            <select name="sort" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                <option value="latest" {{ request('sort', 'latest') === 'latest' ? 'selected' : '' }}>Date: Latest First</option>
+                <option value="oldest" {{ request('sort') === 'oldest' ? 'selected' : '' }}>Date: Oldest First</option>
+                <option value="quantity_desc" {{ request('sort') === 'quantity_desc' ? 'selected' : '' }}>Quantity: High to Low</option>
+                <option value="quantity_asc" {{ request('sort') === 'quantity_asc' ? 'selected' : '' }}>Quantity: Low to High</option>
+            </select>
+
+            <!-- Per Page -->
+            <select name="per_page" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                <option value="15" {{ request('per_page', '15') == '15' ? 'selected' : '' }}>15 / Page</option>
+                <option value="25" {{ request('per_page') == '25' ? 'selected' : '' }}>25 / Page</option>
+                <option value="50" {{ request('per_page') == '50' ? 'selected' : '' }}>50 / Page</option>
+                <option value="100" {{ request('per_page') == '100' ? 'selected' : '' }}>100 / Page</option>
+            </select>
+
+            <button type="submit" class="px-3.5 py-2 text-xs font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition">
                 Filter
             </button>
 
-            @if (request()->hasAny(['search', 'type', 'product_id']))
-                <a href="{{ route('stock.index') }}" class="px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition">
+            @if (request()->hasAny(['search', 'type', 'product_id', 'sort']) && (request('sort') !== 'latest' || request('search') || request('type') || request('product_id')))
+                <a href="{{ route('stock.index') }}" class="px-2.5 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 transition">
                     Reset
                 </a>
             @endif

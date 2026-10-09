@@ -36,20 +36,28 @@ Route::get('/', function () {
 Route::middleware(['auth', EnsureCanAccessAdmin::class])->group(function (): void {
     Route::get('/admin', [ProductController::class, 'index'])->name('admin.dashboard');
 
-    // Products Management
+    // Products Management & Export
+    Route::get('/products/export/csv', [ProductController::class, 'exportCsv'])->name('products.export.csv');
+    Route::get('/products/export/pdf', [ProductController::class, 'exportPdf'])->name('products.export.pdf');
     Route::resource('products', ProductController::class);
 
     // Stock Movements & Check-In
     Route::get('/stock', [StockMovementController::class, 'index'])->name('stock.index');
     Route::post('/stock/check-in', [StockMovementController::class, 'store'])->name('stock.check-in');
 
-    // Checkouts / Sales Ledger
+    // Checkouts / Sales Ledger & Export
+    Route::get('/checkouts/export/csv', [CheckoutController::class, 'exportCsv'])->name('checkouts.export.csv');
+    Route::get('/checkouts/export/pdf', [CheckoutController::class, 'exportPdf'])->name('checkouts.export.pdf');
     Route::post('/checkouts/{checkout}/status', [CheckoutController::class, 'quickUpdateStatus'])->name('checkouts.status');
     Route::get('/checkouts/{checkout}/receipt', [CheckoutController::class, 'clientReceipt'])->name('checkouts.receipt');
     Route::resource('checkouts', CheckoutController::class);
 
-    // Reports (Yearly, Monthly, In-Stock, Out-of-Stock)
+    // Reports (Yearly, Monthly, In-Stock, Out-of-Stock, Product Sales & Exports)
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/export/financial-csv', [ReportController::class, 'exportFinancialCsv'])->name('reports.export.financial.csv');
+    Route::get('/reports/export/financial-pdf', [ReportController::class, 'exportFinancialPdf'])->name('reports.export.financial.pdf');
+    Route::get('/reports/export/product-sales-csv', [ReportController::class, 'exportProductSalesCsv'])->name('reports.export.product_sales.csv');
+    Route::get('/reports/export/product-sales-pdf', [ReportController::class, 'exportProductSalesPdf'])->name('reports.export.product_sales.pdf');
 
     // User Management & App Permissions
     Route::resource('admin/users', UserManagementController::class)->names('users');

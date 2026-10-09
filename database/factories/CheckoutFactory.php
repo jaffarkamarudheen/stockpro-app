@@ -18,7 +18,19 @@ class CheckoutFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'order_number' => 'ORD-'.strtoupper(fake()->unique()->bothify('??####')),
+            'customer_name' => fake()->name(),
+            'customer_address' => fake()->address(),
+            'customer_phone' => fake()->phoneNumber(),
+            'enquiry_from' => 'Instagram',
+            'ordered_at' => now(),
+            'status' => 'ordered',
+            'is_promotion' => false,
+            'total_purchase_cost' => 100.00,
+            'total_other_cost' => 20.00,
+            'total_sale_amount' => 200.00,
+            'total_profit' => 80.00,
+            'discount_amount' => 0.00,
         ];
     }
 }

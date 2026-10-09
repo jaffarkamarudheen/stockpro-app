@@ -11,6 +11,7 @@
         otherRate: {{ (float) $product->other_rate }},
         stockQty: {{ (int) $product->stock_quantity }},
         photoPreview: '{{ $product->photo_url }}',
+        photoUrlInput: '{{ str_starts_with($product->photo_path ?? '', 'http') ? $product->photo_path : '' }}',
         get unitProfit() {
             return (parseFloat(this.saleRate || 0) - parseFloat(this.purchaseRate || 0) - parseFloat(this.otherRate || 0)).toFixed(2);
         },
@@ -45,9 +46,9 @@
             <!-- Left Column: Photo & Live Profit Preview -->
             <div class="space-y-6">
                 <!-- Photo Upload Box -->
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Product Photo</label>
-                    <div class="mt-1 flex justify-center px-4 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-xl relative hover:border-indigo-400 transition bg-slate-50">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-3">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500">Product Photo</label>
+                    <div class="flex justify-center px-4 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-xl relative hover:border-indigo-400 transition bg-slate-50">
                         <template x-if="photoPreview">
                             <div class="relative w-full aspect-square rounded-lg overflow-hidden border border-slate-200">
                                 <img :src="photoPreview" class="w-full h-full object-cover">
@@ -64,9 +65,19 @@
                                     <span>Upload a photo</span>
                                 </label>
                             </div>
-                            <p class="text-[11px] text-slate-400">PNG, JPG, WEBP up to 5MB</p>
+                            <p class="text-[11px] text-slate-400">PNG, JPG, WEBP (Saved directly to DB)</p>
                         </div>
                         <input id="photo" name="photo" type="file" accept="image/*" class="sr-only" x-ref="photoInput" @change="fileChosen">
+                    </div>
+
+                    <!-- OR Image URL Option -->
+                    <div class="pt-2 border-t border-slate-100">
+                        <label for="photo_url_input" class="block text-[11px] font-semibold text-slate-500 mb-1">Or Paste Direct Image URL</label>
+                        <input type="url" id="photo_url_input" name="photo_url_input" x-model="photoUrlInput"
+                               @input="if (photoUrlInput.trim().startsWith('http')) photoPreview = photoUrlInput.trim()"
+                               placeholder="https://example.com/image.jpg"
+                               class="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-1 focus:ring-indigo-500 outline-none">
+                        <span class="text-[10px] text-slate-400 mt-0.5 block">Web URLs never expire on deployment</span>
                     </div>
                 </div>
 

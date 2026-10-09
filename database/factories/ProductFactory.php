@@ -18,7 +18,16 @@ class ProductFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'product_number' => 'SKU-'.fake()->unique()->numerify('#####'),
+            'name' => fake()->words(2, true),
+            'quality' => 'Standard',
+            'price' => 200.00,
+            'purchase_rate' => 100.00,
+            'sale_rate' => 200.00,
+            'other_rate' => 20.00,
+            'profit_per_unit' => 80.00,
+            'stock_quantity' => 25,
+            'low_stock_threshold' => 5,
         ];
     }
 }

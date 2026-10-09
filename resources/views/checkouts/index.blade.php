@@ -96,19 +96,19 @@
     </div>
 
     <!-- Filter & Search Toolbar -->
-    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
-        <form method="GET" action="{{ route('checkouts.index') }}" class="w-full md:w-auto flex-1 flex flex-wrap items-center gap-3">
+    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+        <form method="GET" action="{{ route('checkouts.index') }}" class="flex flex-wrap items-center gap-2.5">
             <div class="relative flex-1 min-w-[200px]">
                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </span>
                 <input type="text" name="search" value="{{ request('search') }}"
-                       placeholder="Search by customer, address, order #..."
-                       class="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                       placeholder="Customer, phone, order #..."
+                       class="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
 
             <!-- Status Filter -->
-            <select name="status" class="py-2 px-3 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+            <select name="status" class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
                 <option value="">All Statuses</option>
                 <option value="ordered" {{ request('status') === 'ordered' ? 'selected' : '' }}>Ordered</option>
                 <option value="waiting_for_delivery" {{ request('status') === 'waiting_for_delivery' ? 'selected' : '' }}>Waiting for Delivery</option>
@@ -118,13 +118,32 @@
             </select>
 
             <!-- Promotion Filter -->
-            <select name="is_promotion" class="py-2 px-3 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+            <select name="is_promotion" class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
                 <option value="">All Types</option>
-                <option value="0" {{ request('is_promotion') === '0' ? 'selected' : '' }}>Regular Sales Only</option>
-                <option value="1" {{ request('is_promotion') === '1' ? 'selected' : '' }}>Promotions / Free Only</option>
+                <option value="0" {{ request('is_promotion') === '0' ? 'selected' : '' }}>Sales Only</option>
+                <option value="1" {{ request('is_promotion') === '1' ? 'selected' : '' }}>Promos Only</option>
             </select>
 
-            <select name="enquiry_from" class="py-2 px-3 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+            <!-- Sort By -->
+            <select name="sort" class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                <option value="latest" {{ request('sort', 'latest') === 'latest' ? 'selected' : '' }}>Date: Latest First</option>
+                <option value="oldest" {{ request('sort') === 'oldest' ? 'selected' : '' }}>Date: Oldest First</option>
+                <option value="amount_desc" {{ request('sort') === 'amount_desc' ? 'selected' : '' }}>Amount: High to Low</option>
+                <option value="amount_asc" {{ request('sort') === 'amount_asc' ? 'selected' : '' }}>Amount: Low to High</option>
+                <option value="profit_desc" {{ request('sort') === 'profit_desc' ? 'selected' : '' }}>Profit: High to Low</option>
+                <option value="customer_asc" {{ request('sort') === 'customer_asc' ? 'selected' : '' }}>Customer (A-Z)</option>
+                <option value="customer_desc" {{ request('sort') === 'customer_desc' ? 'selected' : '' }}>Customer (Z-A)</option>
+            </select>
+
+            <!-- Per Page -->
+            <select name="per_page" class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                <option value="15" {{ request('per_page', '15') == '15' ? 'selected' : '' }}>15 / Page</option>
+                <option value="25" {{ request('per_page') == '25' ? 'selected' : '' }}>25 / Page</option>
+                <option value="50" {{ request('per_page') == '50' ? 'selected' : '' }}>50 / Page</option>
+                <option value="100" {{ request('per_page') == '100' ? 'selected' : '' }}>100 / Page</option>
+            </select>
+
+            <select name="enquiry_from" class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
                 <option value="">All Channels</option>
                 @foreach ($enquirySources as $source)
                     <option value="{{ $source }}" {{ request('enquiry_from') === $source ? 'selected' : '' }}>{{ $source }}</option>
@@ -132,13 +151,13 @@
             </select>
 
             <input type="date" name="date_from" value="{{ request('date_from') }}" title="Date From"
-                   class="py-2 px-3 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                   class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
 
             <input type="date" name="date_to" value="{{ request('date_to') }}" title="Date To"
-                   class="py-2 px-3 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                   class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
 
             @if(isset($users) && $users->count() > 0)
-                <select name="user_id" class="py-2 px-3 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                <select name="user_id" class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
                     <option value="">All Staff</option>
                     @foreach ($users as $user)
                         <option value="{{ $user->id }}" {{ (string)request('user_id') === (string)$user->id ? 'selected' : '' }}>
@@ -148,21 +167,33 @@
                 </select>
             @endif
 
-            <button type="submit" class="px-4 py-2 text-sm font-semibold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 transition">
+            <button type="submit" class="px-3.5 py-2 text-xs font-semibold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 transition">
                 Filter
             </button>
 
-            @if (request()->hasAny(['search', 'status', 'is_promotion', 'enquiry_from', 'date_from', 'date_to', 'user_id', 'needs_attention']))
-                <a href="{{ route('checkouts.index') }}" class="px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition">
+            @if (request()->hasAny(['search', 'status', 'is_promotion', 'enquiry_from', 'date_from', 'date_to', 'user_id', 'needs_attention', 'sort']) && (request('sort') !== 'latest' || request('search') || request('status') || request('is_promotion') || request('enquiry_from') || request('date_from') || request('date_to') || request('user_id') || request('needs_attention')))
+                <a href="{{ route('checkouts.index') }}" class="px-2.5 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 transition">
                     Clear
                 </a>
             @endif
-        </form>
 
-        <a href="{{ route('checkouts.create') }}" class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 shadow transition">
-            <i class="fa-solid fa-cart-plus"></i>
-            <span>New Checkout</span>
-        </a>
+            <div class="ml-auto flex items-center gap-2">
+                <a href="{{ route('checkouts.export.csv', request()->query()) }}"
+                   class="px-3 py-2 text-xs font-bold rounded-xl text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition flex items-center gap-1.5"
+                   title="Export Sales Ledger to Excel (CSV)">
+                    <i class="fa-solid fa-file-excel"></i> Excel (CSV)
+                </a>
+                <a href="{{ route('checkouts.export.pdf', request()->query()) }}"
+                   class="px-3 py-2 text-xs font-bold rounded-xl text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition flex items-center gap-1.5"
+                   title="Download Sales Ledger PDF">
+                    <i class="fa-solid fa-file-pdf"></i> PDF Ledger
+                </a>
+                <a href="{{ route('checkouts.create') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs transition">
+                    <i class="fa-solid fa-cart-plus"></i>
+                    <span>New Checkout</span>
+                </a>
+            </div>
+        </form>
     </div>
 
     <!-- Orders Table -->

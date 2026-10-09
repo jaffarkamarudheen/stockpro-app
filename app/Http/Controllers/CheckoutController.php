@@ -17,51 +17,21 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CheckoutController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Checkout::with('items.product')->latest('ordered_at');
-
-        if ($search = $request->input('search')) {
-            $query->where(function ($q) use ($search): void {
-                $q->where('customer_name', 'like', "%{$search}%")
-                    ->orWhere('customer_address', 'like', "%{$search}%")
-                    ->orWhere('order_number', 'like', "%{$search}%")
-                    ->orWhere('customer_phone', 'like', "%{$search}%");
-            });
+        $perPage = (int) $request->input('per_page', 15);
+        if (! in_array($perPage, [10, 15, 25, 50, 100], true)) {
+            $perPage = 15;
         }
 
-        if ($status = $request->input('status')) {
-            $query->where('status', $status);
-        }
-
-        if ($request->boolean('needs_attention')) {
-            $query->needsAttention();
-        }
-
-        if ($request->has('is_promotion') && $request->input('is_promotion') !== '') {
-            $query->where('is_promotion', $request->boolean('is_promotion'));
-        }
-
-        if ($source = $request->input('enquiry_from')) {
-            $query->where('enquiry_from', $source);
-        }
-
-        if ($from = $request->input('date_from')) {
-            $query->whereDate('ordered_at', '>=', $from);
-        }
-
-        if ($to = $request->input('date_to')) {
-            $query->whereDate('ordered_at', '<=', $to);
-        }
-
-        if ($userId = $request->input('user_id')) {
-            $query->where('user_id', $userId);
-        }
-
-        $checkouts = $query->paginate(15)->withQueryString();
+        $checkouts = $this->buildFilteredQuery($request)
+            ->with('items.product')
+            ->paginate($perPage)
+            ->withQueryString();
 
         $enquirySources = Checkout::select('enquiry_from')
             ->distinct()
@@ -493,5 +463,175 @@ class CheckoutController extends Controller
         $checkout->load(['items.product']);
 
         return view('checkouts.receipt', compact('checkout'));
+    }
+
+    public function exportCsv(Request $request): StreamedResponse
+    {
+        $checkouts = $this->buildFilteredQuery($request)->with('items.product')->get();
+        $filename = 'cherry_adorn_sales_ledger_'.now()->format('Y_m_d_His').'.csv';
+
+        return response()->streamDownload(function () use ($checkouts): void {
+            $handle = fopen('php://output', 'w');
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            fputcsv($handle, [
+                'Order #',
+                'Date',
+                'Customer Name',
+                'Phone',
+                'Address',
+                'Source',
+                'Status',
+                'Type',
+                'Purchase Cost (₹)',
+                'Overhead / Delivery / Pkg (₹)',
+                'Total Cost (₹)',
+                'Subtotal (₹)',
+                'Discount (₹)',
+                'Final Amount (₹)',
+                'Net Profit (₹)',
+                'Items Summary',
+            ]);
+
+            $totalPurchaseVal = 0.0;
+            $totalOtherVal = 0.0;
+            $totalCostVal = 0.0;
+            $totalSaleVal = 0.0;
+            $totalDiscVal = 0.0;
+            $totalProfitVal = 0.0;
+
+            foreach ($checkouts as $c) {
+                $itemsDesc = $c->items->map(fn ($i) => ($i->product?->name ?? 'Product').' (x'.$i->quantity.')')->join(', ');
+
+                if (! $c->is_promotion) {
+                    $totalPurchaseVal += (float) $c->total_purchase_cost;
+                    $totalOtherVal += (float) $c->total_other_cost;
+                    $totalCostVal += (float) $c->total_cost;
+                    $totalSaleVal += (float) $c->total_sale_amount;
+                    $totalDiscVal += (float) ($c->discount_amount ?? 0);
+                    $totalProfitVal += (float) $c->total_profit;
+                }
+
+                fputcsv($handle, [
+                    $c->order_number,
+                    $c->ordered_at ? $c->ordered_at->format('Y-m-d') : $c->created_at->format('Y-m-d'),
+                    $c->customer_name,
+                    $c->customer_phone ?? '',
+                    $c->customer_address ?? '',
+                    $c->enquiry_from ?? 'Direct',
+                    $c->status_label,
+                    $c->is_promotion ? 'Promotion (Free/Gift)' : 'Standard Sale',
+                    number_format($c->total_purchase_cost, 2, '.', ''),
+                    number_format($c->total_other_cost, 2, '.', ''),
+                    number_format($c->total_cost, 2, '.', ''),
+                    number_format(($c->total_sale_amount + ($c->discount_amount ?? 0)), 2, '.', ''),
+                    number_format($c->discount_amount ?? 0, 2, '.', ''),
+                    number_format($c->total_sale_amount, 2, '.', ''),
+                    $c->is_promotion ? '0.00' : number_format($c->total_profit, 2, '.', ''),
+                    $itemsDesc,
+                ]);
+            }
+
+            fputcsv($handle, []);
+            fputcsv($handle, [
+                'TOTAL',
+                'Non-promotional totals',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                number_format($totalPurchaseVal, 2, '.', ''),
+                number_format($totalOtherVal, 2, '.', ''),
+                number_format($totalCostVal, 2, '.', ''),
+                number_format(($totalSaleVal + $totalDiscVal), 2, '.', ''),
+                number_format($totalDiscVal, 2, '.', ''),
+                number_format($totalSaleVal, 2, '.', ''),
+                number_format($totalProfitVal, 2, '.', ''),
+                '',
+            ]);
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function exportPdf(Request $request): View
+    {
+        $checkouts = $this->buildFilteredQuery($request)->with('items.product')->get();
+
+        return view('checkouts.pdf.ledger', compact('checkouts'));
+    }
+
+    protected function buildFilteredQuery(Request $request)
+    {
+        $query = Checkout::query();
+
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search): void {
+                $q->where('customer_name', 'like', "%{$search}%")
+                    ->orWhere('customer_address', 'like', "%{$search}%")
+                    ->orWhere('order_number', 'like', "%{$search}%")
+                    ->orWhere('customer_phone', 'like', "%{$search}%");
+            });
+        }
+
+        if ($status = $request->input('status')) {
+            $query->where('status', $status);
+        }
+
+        if ($request->boolean('needs_attention')) {
+            $query->needsAttention();
+        }
+
+        if ($request->has('is_promotion') && $request->input('is_promotion') !== '') {
+            $query->where('is_promotion', $request->boolean('is_promotion'));
+        }
+
+        if ($source = $request->input('enquiry_from')) {
+            $query->where('enquiry_from', $source);
+        }
+
+        if ($from = $request->input('date_from')) {
+            $query->whereDate('ordered_at', '>=', $from);
+        }
+
+        if ($to = $request->input('date_to')) {
+            $query->whereDate('ordered_at', '<=', $to);
+        }
+
+        if ($userId = $request->input('user_id')) {
+            $query->where('user_id', $userId);
+        }
+
+        $sort = $request->input('sort', 'latest');
+        switch ($sort) {
+            case 'oldest':
+                $query->orderBy('ordered_at', 'asc')->orderBy('id', 'asc');
+                break;
+            case 'amount_desc':
+                $query->orderBy('total_sale_amount', 'desc');
+                break;
+            case 'amount_asc':
+                $query->orderBy('total_sale_amount', 'asc');
+                break;
+            case 'profit_desc':
+                $query->orderBy('total_profit', 'desc');
+                break;
+            case 'customer_asc':
+                $query->orderBy('customer_name', 'asc');
+                break;
+            case 'customer_desc':
+                $query->orderBy('customer_name', 'desc');
+                break;
+            case 'latest':
+            default:
+                $query->orderBy('ordered_at', 'desc')->orderBy('id', 'desc');
+                break;
+        }
+
+        return $query;
     }
 }

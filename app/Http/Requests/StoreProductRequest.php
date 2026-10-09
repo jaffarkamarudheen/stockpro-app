@@ -26,6 +26,7 @@ class StoreProductRequest extends FormRequest
             'product_number' => ['required', 'string', 'max:100', 'unique:products,product_number'],
             'name' => ['required', 'string', 'max:255'],
             'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:5120'],
+            'photo_url_input' => ['nullable', 'url', 'max:2048'],
             'quality' => ['nullable', 'string', 'max:100'],
             'price' => ['required', 'numeric', 'min:0'],
             'purchase_rate' => ['required', 'numeric', 'min:0'],

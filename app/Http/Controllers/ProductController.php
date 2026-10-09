@@ -11,12 +11,123 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProductController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Product::query()->latest();
+        $query = $this->buildFilteredQuery($request);
+
+        $perPage = $request->input('per_page') === 'all' ? 1000 : (int) $request->input('per_page', 25);
+        $products = $query->with('user')->paginate($perPage)->withQueryString();
+
+        $stats = [
+            'total' => Product::count(),
+            'in_stock' => Product::where('stock_quantity', '>', 0)->count(),
+            'low_stock' => Product::where('stock_quantity', '>', 0)->whereColumn('stock_quantity', '<=', 'low_stock_threshold')->count(),
+            'out_of_stock' => Product::where('stock_quantity', '<=', 0)->count(),
+        ];
+
+        $users = User::orderBy('name')->get();
+
+        return view('products.index', compact('products', 'stats', 'users'));
+    }
+
+    public function exportCsv(Request $request): StreamedResponse
+    {
+        $products = $this->buildFilteredQuery($request)->get();
+        $filename = 'CherryAdorn_Inventory_'.now()->format('Ymd_His').'.csv';
+
+        return response()->streamDownload(function () use ($products) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, ['Cherry Adorn - The Little Jewellery Studio']);
+            fputcsv($handle, ['Products Inventory Catalog Export', 'Generated At: '.now()->format('Y-m-d H:i:s')]);
+            fputcsv($handle, []);
+
+            fputcsv($handle, [
+                'Product Code',
+                'Product Name',
+                'Quality / Grade',
+                'Stock Qty',
+                'Low Stock Threshold',
+                'Status',
+                'Purchase Rate (₹)',
+                'Sale Rate (₹)',
+                'Overhead (₹)',
+                'Profit / Unit (₹)',
+                'Total Purchase Value (₹)',
+                'Total Sale Value (₹)',
+                'Potential Profit (₹)',
+            ]);
+
+            $totalUnits = 0;
+            $totalPurchaseVal = 0.0;
+            $totalSaleVal = 0.0;
+            $totalProfitVal = 0.0;
+
+            foreach ($products as $p) {
+                $pVal = $p->stock_quantity * $p->purchase_rate;
+                $sVal = $p->stock_quantity * $p->sale_rate;
+                $profVal = $p->stock_quantity * $p->profit_per_unit;
+
+                $totalUnits += $p->stock_quantity;
+                $totalPurchaseVal += $pVal;
+                $totalSaleVal += $sVal;
+                $totalProfitVal += $profVal;
+
+                fputcsv($handle, [
+                    $p->product_number,
+                    $p->name,
+                    $p->quality ?? 'Standard',
+                    $p->stock_quantity,
+                    $p->low_stock_threshold,
+                    $p->stock_status,
+                    number_format($p->purchase_rate, 2, '.', ''),
+                    number_format($p->sale_rate, 2, '.', ''),
+                    number_format($p->other_rate, 2, '.', ''),
+                    number_format($p->profit_per_unit, 2, '.', ''),
+                    number_format($pVal, 2, '.', ''),
+                    number_format($sVal, 2, '.', ''),
+                    number_format($profVal, 2, '.', ''),
+                ]);
+            }
+
+            fputcsv($handle, []);
+            fputcsv($handle, [
+                'TOTAL',
+                'All Catalog Summary',
+                '',
+                $totalUnits,
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                number_format($totalPurchaseVal, 2, '.', ''),
+                number_format($totalSaleVal, 2, '.', ''),
+                number_format($totalProfitVal, 2, '.', ''),
+            ]);
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function exportPdf(Request $request): View
+    {
+        $products = $this->buildFilteredQuery($request)->get();
+
+        return view('products.pdf.catalog', compact('products'));
+    }
+
+    protected function buildFilteredQuery(Request $request)
+    {
+        $query = Product::query();
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search): void {
@@ -41,19 +152,36 @@ class ProductController extends Controller
             $query->where('user_id', $userId);
         }
 
-        $perPage = $request->input('per_page') === 'all' ? 500 : (int) $request->input('per_page', 50);
-        $products = $query->with('user')->paginate($perPage)->withQueryString();
+        $sort = $request->input('sort', 'latest');
+        switch ($sort) {
+            case 'oldest':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'name_asc':
+                $query->orderBy('name', 'asc');
+                break;
+            case 'name_desc':
+                $query->orderBy('name', 'desc');
+                break;
+            case 'stock_desc':
+                $query->orderBy('stock_quantity', 'desc');
+                break;
+            case 'stock_asc':
+                $query->orderBy('stock_quantity', 'asc');
+                break;
+            case 'price_desc':
+                $query->orderBy('sale_rate', 'desc');
+                break;
+            case 'price_asc':
+                $query->orderBy('sale_rate', 'asc');
+                break;
+            case 'latest':
+            default:
+                $query->orderBy('created_at', 'desc');
+                break;
+        }
 
-        $stats = [
-            'total' => Product::count(),
-            'in_stock' => Product::where('stock_quantity', '>', 0)->count(),
-            'low_stock' => Product::where('stock_quantity', '>', 0)->whereColumn('stock_quantity', '<=', 'low_stock_threshold')->count(),
-            'out_of_stock' => Product::where('stock_quantity', '<=', 0)->count(),
-        ];
-
-        $users = User::orderBy('name')->get();
-
-        return view('products.index', compact('products', 'stats', 'users'));
+        return $query;
     }
 
     public function create(): View
@@ -67,9 +195,11 @@ class ProductController extends Controller
 
         if ($request->hasFile('photo')) {
             $validated['photo_path'] = Product::processImage($request->file('photo'));
+        } elseif (! empty($validated['photo_url_input'])) {
+            $validated['photo_path'] = $validated['photo_url_input'];
         }
 
-        unset($validated['photo']);
+        unset($validated['photo'], $validated['photo_url_input']);
 
         $product = Product::create($validated);
 
@@ -92,9 +222,11 @@ class ProductController extends Controller
                 Storage::disk('public')->delete($product->photo_path);
             }
             $validated['photo_path'] = Product::processImage($request->file('photo'));
+        } elseif (! empty($validated['photo_url_input'])) {
+            $validated['photo_path'] = $validated['photo_url_input'];
         }
 
-        unset($validated['photo']);
+        unset($validated['photo'], $validated['photo_url_input']);
 
         $product->update($validated);
 

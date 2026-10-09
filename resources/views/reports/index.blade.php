@@ -5,39 +5,56 @@
 
 @section('content')
 <div class="space-y-6">
-    <!-- Filter Bar for Year & Month -->
-    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+    <!-- Filter Bar & Export Toolbar -->
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col xl:flex-row items-center justify-between gap-4">
         <div>
             <h3 class="text-base font-bold text-slate-800">Financial & Inventory Reports</h3>
             <p class="text-xs text-slate-500">Yearly & monthly sales performance, profit analysis, and in-stock / out-of-stock status.</p>
         </div>
 
-        <form method="GET" action="{{ route('reports.index') }}" class="flex flex-wrap items-center gap-3">
-            <div class="flex items-center gap-2">
-                <label for="year" class="text-xs font-semibold text-slate-600">Year:</label>
-                <select id="year" name="year" class="py-2 px-3 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                    @foreach ($availableYears as $year)
-                        <option value="{{ $year }}" {{ $selectedYear == $year ? 'selected' : '' }}>{{ $year }}</option>
-                    @endforeach
-                </select>
-            </div>
+        <div class="flex flex-wrap items-center gap-3">
+            <form method="GET" action="{{ route('reports.index') }}" class="flex flex-wrap items-center gap-2">
+                <div class="flex items-center gap-1.5">
+                    <label for="year" class="text-xs font-semibold text-slate-600">Year:</label>
+                    <select id="year" name="year" class="py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                        @foreach ($availableYears as $year)
+                            <option value="{{ $year }}" {{ $selectedYear == $year ? 'selected' : '' }}>{{ $year }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <label for="month" class="text-xs font-semibold text-slate-600">Month:</label>
+                    <select id="month" name="month" class="py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                        <option value="">All Months (Full Year)</option>
+                        @for ($m = 1; $m <= 12; $m++)
+                            <option value="{{ $m }}" {{ $selectedMonth == $m ? 'selected' : '' }}>
+                                {{ \Carbon\Carbon::create(null, $m, 1)->format('F') }}
+                            </option>
+                        @endfor
+                    </select>
+                </div>
+
+                <button type="submit" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition">
+                    Filter
+                </button>
+            </form>
+
+            <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
 
             <div class="flex items-center gap-2">
-                <label for="month" class="text-xs font-semibold text-slate-600">Month:</label>
-                <select id="month" name="month" class="py-2 px-3 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                    <option value="">All Months (Full Year)</option>
-                    @for ($m = 1; $m <= 12; $m++)
-                        <option value="{{ $m }}" {{ $selectedMonth == $m ? 'selected' : '' }}>
-                            {{ \Carbon\Carbon::create(null, $m, 1)->format('F') }}
-                        </option>
-                    @endfor
-                </select>
+                <a href="{{ route('reports.export.financial.csv', ['year' => $selectedYear, 'month' => $selectedMonth]) }}"
+                   class="px-3 py-1.5 text-xs font-bold rounded-lg text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition flex items-center gap-1.5"
+                   title="Export Financial Summary to Microsoft Excel (CSV)">
+                    <i class="fa-solid fa-file-excel"></i> Excel (CSV)
+                </a>
+                <a href="{{ route('reports.export.financial.pdf', ['year' => $selectedYear, 'month' => $selectedMonth]) }}"
+                   class="px-3 py-1.5 text-xs font-bold rounded-lg text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition flex items-center gap-1.5"
+                   title="Download Financial Report PDF">
+                    <i class="fa-solid fa-file-pdf"></i> Download PDF
+                </a>
             </div>
-
-            <button type="submit" class="px-4 py-2 text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition">
-                Apply Filter
-            </button>
-        </form>
+        </div>
     </div>
 
     <!-- Summary Metrics Cards -->
@@ -178,6 +195,103 @@
                         </tr>
                     @endforeach
                 </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Product Sales & Profit Breakdown Table -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+                <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Product Sales & Profit Breakdown</h4>
+                <p class="text-xs text-slate-500">Sales volume, revenue, and gross profit generated per product in {{ $selectedYear }}{{ $selectedMonth ? ' (Month ' . $selectedMonth . ')' : '' }}.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('reports.export.product_sales.csv', ['year' => $selectedYear, 'month' => $selectedMonth]) }}"
+                   class="px-3 py-1.5 text-xs font-bold rounded-lg text-emerald-700 bg-white border border-emerald-300 hover:bg-emerald-50 transition flex items-center gap-1.5"
+                   title="Export Product Sales Breakdown to Excel (CSV)">
+                    <i class="fa-solid fa-file-excel"></i> Export Sales Excel
+                </a>
+                <a href="{{ route('reports.export.product_sales.pdf', ['year' => $selectedYear, 'month' => $selectedMonth]) }}"
+                   class="px-3 py-1.5 text-xs font-bold rounded-lg text-rose-700 bg-white border border-rose-300 hover:bg-rose-50 transition flex items-center gap-1.5"
+                   title="Download Product Sales PDF Report">
+                    <i class="fa-solid fa-file-pdf"></i> Download Sales PDF
+                </a>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+                <thead class="bg-slate-100/70 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
+                    <tr>
+                        <th class="px-4 py-3">Product Name & Code</th>
+                        <th class="px-4 py-3 text-center">Current Stock</th>
+                        <th class="px-4 py-3 text-center">Units Sold</th>
+                        <th class="px-4 py-3 text-right">Selling Rate</th>
+                        <th class="px-4 py-3 text-right">Total Revenue</th>
+                        <th class="px-4 py-3 text-right">Profit Generated</th>
+                        <th class="px-4 py-3 text-right">Margin</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200">
+                    @php
+                        $totUnits = 0;
+                        $totRev = 0;
+                        $totProf = 0;
+                    @endphp
+                    @forelse ($productSalesData as $ps)
+                        @php
+                            $totUnits += $ps['units_sold'];
+                            $totRev += $ps['revenue'];
+                            $totProf += $ps['profit'];
+                        @endphp
+                        <tr class="hover:bg-slate-50/80 transition {{ $ps['units_sold'] > 0 ? 'bg-white' : 'bg-slate-50/30' }}">
+                            <td class="px-4 py-3">
+                                <div class="font-bold text-slate-800">{{ $ps['product']->name }}</div>
+                                <div class="font-mono text-xs text-slate-400">{{ $ps['product']->product_number }}</div>
+                            </td>
+                            <td class="px-4 py-3 text-center font-semibold {{ $ps['product']->stock_quantity <= 0 ? 'text-rose-600' : 'text-slate-700' }}">
+                                {{ $ps['product']->stock_quantity }}
+                            </td>
+                            <td class="px-4 py-3 text-center font-bold text-indigo-700">
+                                {{ $ps['units_sold'] }}
+                            </td>
+                            <td class="px-4 py-3 text-right text-slate-600">
+                                ₹{{ number_format($ps['product']->sale_rate, 2) }}
+                            </td>
+                            <td class="px-4 py-3 text-right font-medium text-slate-800">
+                                ₹{{ number_format($ps['revenue'], 2) }}
+                            </td>
+                            <td class="px-4 py-3 text-right font-bold {{ $ps['profit'] >= 0 ? 'text-emerald-600' : 'text-rose-600' }}">
+                                {{ $ps['profit'] >= 0 ? '+' : '' }}₹{{ number_format($ps['profit'], 2) }}
+                            </td>
+                            <td class="px-4 py-3 text-right text-xs text-slate-500">
+                                @if ($ps['revenue'] > 0)
+                                    {{ number_format(($ps['profit'] / $ps['revenue']) * 100, 1) }}%
+                                @else
+                                    —
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-4 py-8 text-center text-slate-400 italic">No products available in the catalog.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                @if (count($productSalesData) > 0)
+                    <tfoot class="bg-slate-50 font-bold border-t border-slate-200 text-slate-900">
+                        <tr>
+                            <td class="px-4 py-3" colspan="2">TOTAL SOLD</td>
+                            <td class="px-4 py-3 text-center text-indigo-700">{{ $totUnits }} units</td>
+                            <td class="px-4 py-3"></td>
+                            <td class="px-4 py-3 text-right">₹{{ number_format($totRev, 2) }}</td>
+                            <td class="px-4 py-3 text-right text-emerald-700">+₹{{ number_format($totProf, 2) }}</td>
+                            <td class="px-4 py-3 text-right text-xs">
+                                {{ $totRev > 0 ? number_format(($totProf / $totRev) * 100, 1) . '%' : '—' }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                @endif
             </table>
         </div>
     </div>

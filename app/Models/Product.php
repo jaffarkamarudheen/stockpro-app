@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
@@ -85,7 +86,11 @@ class Product extends Model
                 return $this->photo_path;
             }
 
-            return asset('storage/'.$this->photo_path);
+            if (Storage::disk('public')->exists($this->photo_path)) {
+                return asset('storage/'.$this->photo_path);
+            }
+
+            return null;
         }
 
         return null;

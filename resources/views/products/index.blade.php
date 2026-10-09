@@ -41,27 +41,49 @@
     </div>
 
     <!-- Filter & Search Toolbar -->
-    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
-        <form method="GET" action="{{ route('products.index') }}" class="w-full md:w-auto flex-1 flex flex-wrap items-center gap-3">
-            <div class="relative flex-1 min-w-[240px]">
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
+        <form method="GET" action="{{ route('products.index') }}" class="flex flex-wrap items-center gap-2.5">
+            <div class="relative flex-1 min-w-[200px]">
                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </span>
                 <input type="text" name="search" value="{{ request('search') }}"
-                       placeholder="Search by name, product code, quality..."
-                       class="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                       placeholder="Search name, code, quality..."
+                       class="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
 
-            <select name="status" class="py-2 px-3 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
-                <option value="">All Stock Statuses</option>
-                <option value="in_stock" {{ request('status') === 'in_stock' ? 'selected' : '' }}>In Stock Only</option>
-                <option value="low_stock" {{ request('status') === 'low_stock' ? 'selected' : '' }}>Low Stock Alerts</option>
+            <!-- Stock Status -->
+            <select name="status" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                <option value="">All Statuses</option>
+                <option value="in_stock" {{ request('status') === 'in_stock' ? 'selected' : '' }}>In Stock</option>
+                <option value="low_stock" {{ request('status') === 'low_stock' ? 'selected' : '' }}>Low Stock</option>
                 <option value="out_of_stock" {{ request('status') === 'out_of_stock' ? 'selected' : '' }}>Out of Stock</option>
             </select>
 
+            <!-- Sort By Order -->
+            <select name="sort" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                <option value="latest" {{ request('sort', 'latest') === 'latest' ? 'selected' : '' }}>Latest Added</option>
+                <option value="oldest" {{ request('sort') === 'oldest' ? 'selected' : '' }}>Oldest Added</option>
+                <option value="name_asc" {{ request('sort') === 'name_asc' ? 'selected' : '' }}>Name (A to Z)</option>
+                <option value="name_desc" {{ request('sort') === 'name_desc' ? 'selected' : '' }}>Name (Z to A)</option>
+                <option value="stock_desc" {{ request('sort') === 'stock_desc' ? 'selected' : '' }}>Stock (High to Low)</option>
+                <option value="stock_asc" {{ request('sort') === 'stock_asc' ? 'selected' : '' }}>Stock (Low to High)</option>
+                <option value="price_desc" {{ request('sort') === 'price_desc' ? 'selected' : '' }}>Price (High to Low)</option>
+                <option value="price_asc" {{ request('sort') === 'price_asc' ? 'selected' : '' }}>Price (Low to High)</option>
+            </select>
+
+            <!-- Per Page -->
+            <select name="per_page" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                <option value="15" {{ request('per_page', '50') === '15' ? 'selected' : '' }}>15 / Page</option>
+                <option value="25" {{ request('per_page') === '25' ? 'selected' : '' }}>25 / Page</option>
+                <option value="50" {{ request('per_page', '50') === '50' ? 'selected' : '' }}>50 / Page</option>
+                <option value="100" {{ request('per_page') === '100' ? 'selected' : '' }}>100 / Page</option>
+                <option value="all" {{ request('per_page') === 'all' ? 'selected' : '' }}>All Items</option>
+            </select>
+
             @if(isset($users) && $users->count() > 0)
-                <select name="user_id" class="py-2 px-3 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
-                    <option value="">All Users / Creators</option>
+                <select name="user_id" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                    <option value="">All Creators</option>
                     @foreach($users as $user)
                         <option value="{{ $user->id }}" {{ (string)request('user_id') === (string)$user->id ? 'selected' : '' }}>
                             {{ $user->name }}
@@ -70,27 +92,33 @@
                 </select>
             @endif
 
-            <select name="per_page" class="py-2 px-3 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
-                <option value="50" {{ request('per_page', '50') === '50' ? 'selected' : '' }}>Show 50 Products</option>
-                <option value="100" {{ request('per_page') === '100' ? 'selected' : '' }}>Show 100 Products</option>
-                <option value="all" {{ request('per_page') === 'all' ? 'selected' : '' }}>Show All Products</option>
-            </select>
-
-            <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition">
+            <button type="submit" class="px-3.5 py-2 text-xs font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition">
                 Filter
             </button>
 
-            @if (request()->hasAny(['search', 'status', 'user_id']))
-                <a href="{{ route('products.index') }}" class="px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition">
+            @if (request()->hasAny(['search', 'status', 'user_id', 'sort']) && (request('sort') !== 'latest' || request('search') || request('status') || request('user_id')))
+                <a href="{{ route('products.index') }}" class="px-2.5 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 transition">
                     Clear
                 </a>
             @endif
-        </form>
 
-        <a href="{{ route('products.create') }}" class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow transition">
-            <i class="fa-solid fa-plus"></i>
-            <span>Add New Product</span>
-        </a>
+            <div class="ml-auto flex items-center gap-2">
+                <a href="{{ route('products.export.csv', request()->query()) }}"
+                   class="px-3 py-2 text-xs font-bold rounded-lg text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition flex items-center gap-1.5"
+                   title="Export Product Catalog to Excel (CSV)">
+                    <i class="fa-solid fa-file-excel"></i> Excel (CSV)
+                </a>
+                <a href="{{ route('products.export.pdf', request()->query()) }}"
+                   class="px-3 py-2 text-xs font-bold rounded-lg text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition flex items-center gap-1.5"
+                   title="Download Product Catalog PDF">
+                    <i class="fa-solid fa-file-pdf"></i> PDF Catalog
+                </a>
+                <a href="{{ route('products.create') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs transition">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Add Product</span>
+                </a>
+            </div>
+        </form>
     </div>
 
     <!-- Products Table -->
