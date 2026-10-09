@@ -15,8 +15,8 @@ class ReportController extends Controller
         $selectedYear = (int) $request->input('year', date('Y'));
         $selectedMonth = $request->input('month'); // optional specific month
 
-        // Base checkouts query for financial analytics
-        $checkoutsQuery = Checkout::query()->whereYear('created_at', $selectedYear);
+        // Base checkouts query for financial analytics (promotions excluded from revenue & profit totals)
+        $checkoutsQuery = Checkout::nonPromotional()->whereYear('created_at', $selectedYear);
 
         if ($selectedMonth) {
             $checkoutsQuery->whereMonth('created_at', (int) $selectedMonth);
@@ -28,11 +28,15 @@ class ReportController extends Controller
         $totalPurchase = $checkoutsForPeriod->sum('total_purchase_cost');
         $totalOther = $checkoutsForPeriod->sum('total_other_cost');
         $totalProfit = $checkoutsForPeriod->sum('total_profit');
-        $totalOrders = $checkoutsForPeriod->count();
-        $totalItemsSold = $checkoutsForPeriod->sum('total_quantity');
+        $totalOrders = Checkout::whereYear('created_at', $selectedYear)
+            ->when($selectedMonth, fn ($q) => $q->whereMonth('created_at', (int) $selectedMonth))
+            ->count();
+        $totalItemsSold = Checkout::whereYear('created_at', $selectedYear)
+            ->when($selectedMonth, fn ($q) => $q->whereMonth('created_at', (int) $selectedMonth))
+            ->sum('total_quantity');
 
-        // All checkouts in selected year to build 12-month trend
-        $allYearCheckouts = Checkout::whereYear('created_at', $selectedYear)->get();
+        // All non-promotional checkouts in selected year to build 12-month revenue trend
+        $allYearCheckouts = Checkout::nonPromotional()->whereYear('created_at', $selectedYear)->get();
 
         $monthlyData = [];
         for ($m = 1; $m <= 12; $m++) {

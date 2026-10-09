@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreCheckoutRequest extends FormRequest
+class UpdateCheckoutRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -17,19 +17,6 @@ class StoreCheckoutRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        // Support quick checkout from mobile scanner with direct product_id and quantity
-        if ($this->has('product_id') && ! $this->has('items')) {
-            $this->merge([
-                'items' => [
-                    [
-                        'product_id' => $this->input('product_id'),
-                        'quantity' => $this->input('quantity', 1),
-                        'unit_sale_rate' => $this->input('unit_sale_rate'),
-                    ],
-                ],
-            ]);
-        }
-
         if ($this->has('is_promotion')) {
             $this->merge([
                 'is_promotion' => filter_var($this->input('is_promotion'), FILTER_VALIDATE_BOOLEAN),
@@ -51,9 +38,11 @@ class StoreCheckoutRequest extends FormRequest
             'enquiry_from' => ['required', 'string', 'max:100'],
             'is_promotion' => ['nullable', 'boolean'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
-            'status' => ['nullable', 'string', 'in:ordered,waiting_for_delivery,delivered,received,cancelled'],
+            'status' => ['required', 'string', 'in:ordered,waiting_for_delivery,delivered,received,cancelled'],
             'ordered_at' => ['nullable', 'date'],
             'expected_delivery_date' => ['nullable', 'date'],
+            'delivered_at' => ['nullable', 'date'],
+            'received_at' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'integer', 'exists:products,id'],

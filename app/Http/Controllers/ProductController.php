@@ -66,7 +66,7 @@ class ProductController extends Controller
         $validated = $request->validated();
 
         if ($request->hasFile('photo')) {
-            $validated['photo_path'] = $request->file('photo')->store('products', 'public');
+            $validated['photo_path'] = Product::processImage($request->file('photo'));
         }
 
         unset($validated['photo']);
@@ -88,10 +88,10 @@ class ProductController extends Controller
         $validated = $request->validated();
 
         if ($request->hasFile('photo')) {
-            if ($product->photo_path && Storage::disk('public')->exists($product->photo_path)) {
+            if ($product->photo_path && ! str_starts_with($product->photo_path, 'data:') && Storage::disk('public')->exists($product->photo_path)) {
                 Storage::disk('public')->delete($product->photo_path);
             }
-            $validated['photo_path'] = $request->file('photo')->store('products', 'public');
+            $validated['photo_path'] = Product::processImage($request->file('photo'));
         }
 
         unset($validated['photo']);
@@ -105,7 +105,7 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
-        if ($product->photo_path && Storage::disk('public')->exists($product->photo_path)) {
+        if ($product->photo_path && ! str_starts_with($product->photo_path, 'data:') && Storage::disk('public')->exists($product->photo_path)) {
             Storage::disk('public')->delete($product->photo_path);
         }
 

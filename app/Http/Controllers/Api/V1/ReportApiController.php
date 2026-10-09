@@ -16,7 +16,7 @@ class ReportApiController extends Controller
         $year = (int) $request->input('year', date('Y'));
         $month = $request->input('month');
 
-        $query = Checkout::query()->whereYear('created_at', $year);
+        $query = Checkout::nonPromotional()->whereYear('created_at', $year);
 
         if ($month) {
             $query->whereMonth('created_at', (int) $month);
@@ -24,7 +24,7 @@ class ReportApiController extends Controller
 
         $checkouts = $query->get();
 
-        $allYearCheckouts = Checkout::whereYear('created_at', $year)->get();
+        $allYearCheckouts = Checkout::nonPromotional()->whereYear('created_at', $year)->get();
         $monthlyBreakdown = [];
         for ($m = 1; $m <= 12; $m++) {
             $monthKey = str_pad((string) $m, 2, '0', STR_PAD_LEFT);

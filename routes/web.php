@@ -44,7 +44,9 @@ Route::middleware(['auth', EnsureCanAccessAdmin::class])->group(function (): voi
     Route::post('/stock/check-in', [StockMovementController::class, 'store'])->name('stock.check-in');
 
     // Checkouts / Sales Ledger
-    Route::resource('checkouts', CheckoutController::class)->only(['index', 'create', 'store', 'show']);
+    Route::post('/checkouts/{checkout}/status', [CheckoutController::class, 'quickUpdateStatus'])->name('checkouts.status');
+    Route::get('/checkouts/{checkout}/receipt', [CheckoutController::class, 'clientReceipt'])->name('checkouts.receipt');
+    Route::resource('checkouts', CheckoutController::class);
 
     // Reports (Yearly, Monthly, In-Stock, Out-of-Stock)
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
@@ -54,6 +56,11 @@ Route::middleware(['auth', EnsureCanAccessAdmin::class])->group(function (): voi
 
     // Activity & Audit Logs
     Route::get('/admin/activity-logs', [ActivityLogController::class, 'index'])->name('activity.index');
+});
+
+// Client Printable / Downloadable Receipt (Accessible by any authenticated user)
+Route::middleware(['auth'])->group(function (): void {
+    Route::get('/receipt/{checkout}', [CheckoutController::class, 'clientReceipt'])->name('client.receipt');
 });
 
 // Mobile Camera App / Scanner - Protected by Auth & EnsureCanAccessApp

@@ -27,6 +27,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::get('/checkouts', [CheckoutApiController::class, 'index'])->name('checkouts.index');
     Route::post('/checkouts', [CheckoutApiController::class, 'store'])->name('checkouts.store');
     Route::get('/checkouts/{checkout}', [CheckoutApiController::class, 'show'])->name('checkouts.show');
+    Route::match(['put', 'patch'], '/checkouts/{checkout}', [CheckoutApiController::class, 'update'])->name('checkouts.update');
+    Route::delete('/checkouts/{checkout}', [CheckoutApiController::class, 'destroy'])->name('checkouts.destroy');
+    Route::post('/checkouts/{checkout}/status', [CheckoutApiController::class, 'updateStatus'])->name('checkouts.status');
 
     // Reports (Yearly, Monthly, In-Stock, Out-of-Stock)
     Route::get('/reports/summary', [ReportApiController::class, 'summary'])->name('reports.summary');

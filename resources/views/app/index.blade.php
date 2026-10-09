@@ -506,6 +506,33 @@
                         </select>
                     </div>
 
+                    <!-- Expected Delivery Date -->
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">Expected Delivery Date (Optional)</label>
+                        <input type="date" x-model="expectedDeliveryDate"
+                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-indigo-500">
+                    </div>
+
+                    <!-- Promotion & Discount Options -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        <div class="p-2.5 rounded-xl border border-pink-900/60 bg-pink-950/30 flex items-start gap-2">
+                            <input type="checkbox" id="pos_is_promo" x-model="isPromotion"
+                                   class="mt-0.5 rounded border-pink-700 text-pink-600 focus:ring-pink-500 cursor-pointer">
+                            <label for="pos_is_promo" class="text-[11px] text-pink-300 cursor-pointer">
+                                <span class="font-bold block flex items-center gap-1">
+                                    <i class="fa-solid fa-gift text-pink-400"></i> Promotional (Free / ₹0)
+                                </span>
+                                <span class="text-[10px] text-pink-400/80">Stock only, no fee charged</span>
+                            </label>
+                        </div>
+
+                        <div x-show="!isPromotion">
+                            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Discount (₹)</label>
+                            <input type="number" step="0.01" min="0" x-model="discountAmount" placeholder="0.00"
+                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-indigo-500">
+                        </div>
+                    </div>
+
                     <!-- Order Financial Breakdown in INR (₹) -->
                     <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1">
                         <div class="flex justify-between text-slate-400">
@@ -514,11 +541,16 @@
                         </div>
                         <div class="flex justify-between text-slate-300 font-semibold">
                             <span>Total Checkout Amount:</span>
-                            <span class="font-bold text-white text-sm" x-text="'₹' + totalCartAmount"></span>
+                            <span class="font-bold text-white text-sm"
+                                  :class="isPromotion ? 'text-pink-400' : 'text-white'"
+                                  x-text="isPromotion ? 'FREE (₹0.00)' : '₹' + totalCartAmount"></span>
                         </div>
-                        <div class="flex justify-between text-emerald-400 font-bold border-t border-slate-800/80 pt-1 mt-1">
+                        <div class="flex justify-between text-emerald-400 font-bold border-t border-slate-800/80 pt-1 mt-1" x-show="!isPromotion">
                             <span>Calculated Net Profit:</span>
                             <span x-text="'+₹' + totalCartProfit"></span>
+                        </div>
+                        <div class="text-center text-[10px] text-pink-400 font-semibold border-t border-slate-800/80 pt-1 mt-1" x-show="isPromotion">
+                            <span>🎁 Promotion - Not calculated in sales reports</span>
                         </div>
                     </div>
                 </div>
@@ -528,9 +560,37 @@
                         Cancel
                     </button>
                     <button type="button" @click="submitCheckOut()" :disabled="loading || cart.length === 0"
-                            class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:pointer-events-none text-white flex items-center justify-center gap-1.5 shadow">
+                             class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:pointer-events-none text-white flex items-center justify-center gap-1.5 shadow">
                         <i class="fa-solid fa-check" x-show="!loading"></i>
                         <span x-text="loading ? 'Processing...' : 'Complete Checkout (' + totalCartCount + ' items)'"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Order Completed & Download PDF Receipt Modal -->
+    <div x-show="showSuccessReceiptModal" x-cloak class="relative z-50" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-xs" @click="showSuccessReceiptModal = false"></div>
+        <div class="fixed inset-0 flex items-center justify-center p-4">
+            <div class="bg-slate-900 border border-pink-500/30 rounded-3xl w-full max-w-sm p-6 text-center space-y-4 shadow-2xl animate-fadeIn">
+                <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-3xl mx-auto border border-emerald-500/30">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-white">Order Processed!</h3>
+                    <p class="font-mono text-sm text-pink-400 font-bold mt-1" x-text="completedOrder?.order_number"></p>
+                    <p class="text-xs text-slate-400 mt-1">Stock deducted successfully.</p>
+                </div>
+                <div class="pt-2 space-y-2">
+                    <a :href="'/receipt/' + (completedOrder ? completedOrder.id : '')" target="_blank"
+                       class="w-full py-3 px-4 rounded-xl text-xs font-bold text-white bg-pink-600 hover:bg-pink-500 flex items-center justify-center gap-2 shadow-lg transition">
+                        <i class="fa-solid fa-file-pdf text-sm"></i>
+                        <span>View & Download Client PDF Receipt</span>
+                    </a>
+                    <button type="button" @click="showSuccessReceiptModal = false"
+                            class="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 transition">
+                        Done / Continue
                     </button>
                 </div>
             </div>
@@ -567,6 +627,11 @@
                 customerAddress: '',
                 customerPhone: '',
                 enquiryFrom: 'WhatsApp',
+                isPromotion: false,
+                discountAmount: 0,
+                expectedDeliveryDate: '',
+                showSuccessReceiptModal: false,
+                completedOrder: null,
 
                 initApp() {
                     if (this.products.length > 0) {
@@ -579,13 +644,16 @@
                 },
 
                 get totalCartAmount() {
+                    if (this.isPromotion) return '0.00';
                     const total = this.cart.reduce((sum, item) => {
                         return sum + ((parseFloat(item.unit_sale_rate) || 0) * (parseInt(item.quantity) || 0));
                     }, 0);
-                    return total.toFixed(2);
+                    const disc = parseFloat(this.discountAmount) || 0;
+                    return Math.max(0, total - disc).toFixed(2);
                 },
 
                 get totalCartProfit() {
+                    if (this.isPromotion) return '0.00';
                     const profit = this.cart.reduce((sum, item) => {
                         const sale = parseFloat(item.unit_sale_rate) || 0;
                         const cost = parseFloat(item.product.purchase_rate) || 0;
@@ -593,7 +661,8 @@
                         const unitProfit = sale - cost - other;
                         return sum + (unitProfit * (parseInt(item.quantity) || 0));
                     }, 0);
-                    return profit.toFixed(2);
+                    const disc = parseFloat(this.discountAmount) || 0;
+                    return (profit - disc).toFixed(2);
                 },
 
                 addToCart(p, qty = 1) {
@@ -803,6 +872,9 @@
                             customer_address: this.customerAddress,
                             customer_phone: this.customerPhone,
                             enquiry_from: this.enquiryFrom,
+                            is_promotion: this.isPromotion,
+                            discount_amount: parseFloat(this.discountAmount) || 0,
+                            expected_delivery_date: this.expectedDeliveryDate || null,
                             items: this.cart.map(item => ({
                                 product_id: item.product.id,
                                 quantity: item.quantity,
@@ -834,12 +906,20 @@
                             const totalUnits = this.totalCartCount;
                             this.cart = [];
                             this.showCheckOutModal = false;
-                            this.showToast('Order #' + (data.data?.order_number || '') + ' created (' + totalUnits + ' items)! Profit: +₹' + (data.data?.total_profit || 0), 'success');
+
+                            // Set completed order for receipt modal
+                            this.completedOrder = data.data;
+                            this.showSuccessReceiptModal = true;
+
+                            this.showToast('Order #' + (data.data?.order_number || '') + ' created (' + totalUnits + ' items)!', 'success');
 
                             // Reset customer inputs
                             this.customerName = '';
                             this.customerAddress = '';
                             this.customerPhone = '';
+                            this.isPromotion = false;
+                            this.discountAmount = 0;
+                            this.expectedDeliveryDate = '';
                         } else {
                             this.showToast(data.message || 'Checkout failed', 'error');
                         }
