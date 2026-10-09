@@ -170,6 +170,36 @@ class CheckoutWorkflowTest extends TestCase
         $this->assertEquals(15, $this->product->stock_quantity);
     }
 
+    public function test_checkout_edit_view_loads_with_selected_product(): void
+    {
+        $checkout = Checkout::create([
+            'customer_name' => 'Pooja Nair',
+            'customer_address' => 'Kochi, Kerala',
+            'enquiry_from' => 'WhatsApp',
+            'status' => 'ordered',
+            'total_quantity' => 1,
+            'subtotal_amount' => 450.00,
+            'total_sale_amount' => 450.00,
+            'ordered_at' => now(),
+        ]);
+
+        $checkout->items()->create([
+            'product_id' => $this->product->id,
+            'quantity' => 1,
+            'unit_purchase_rate' => 150.00,
+            'unit_sale_rate' => 450.00,
+            'unit_other_rate' => 50.00,
+            'unit_profit' => 250.00,
+            'subtotal_sale' => 450.00,
+            'subtotal_profit' => 250.00,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('checkouts.edit', $checkout));
+        $response->assertOk();
+        $response->assertSee('Rose Quartz Necklace');
+        $response->assertSee('value="'.$this->product->id.'"', false);
+    }
+
     public function test_checkout_can_be_deleted_and_restores_inventory_stock(): void
     {
         $checkout = Checkout::create([

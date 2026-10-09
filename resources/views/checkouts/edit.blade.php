@@ -11,7 +11,7 @@
         discountAmount: {{ (float) $checkout->discount_amount }},
         status: '{{ $checkout->status }}',
         items: {{ Js::from($checkout->items->map(fn($item) => [
-            'product_id' => $item->product_id,
+            'product_id' => (string) $item->product_id,
             'quantity' => (int) $item->quantity,
             'unit_sale_rate' => (float) $item->unit_sale_rate,
             'stock' => (int) ($item->product?->stock_quantity ?? 0) + (int) $item->quantity,
@@ -217,10 +217,9 @@
                                     <select :name="'items[' + index + '][product_id]'" x-model="item.product_id" @change="productChanged(index)" required
                                             class="w-full px-3 py-2 text-xs md:text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
                                         <option value="">-- Choose Product --</option>
-                                        <template x-for="p in products" :key="p.id">
-                                            <option :value="p.id"
-                                                    x-text="p.name + ' (' + p.product_number + ')'"></option>
-                                        </template>
+                                        @foreach ($products as $p)
+                                            <option value="{{ $p->id }}">{{ $p->name }} ({{ $p->product_number }})</option>
+                                        @endforeach
                                     </select>
                                 </div>
 

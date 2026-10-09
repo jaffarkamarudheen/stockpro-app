@@ -455,10 +455,11 @@
                             <select x-model="selectedProductToAdd"
                                     class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-indigo-500">
                                 <option value="">+ Add another product from catalog...</option>
-                                <template x-for="p in products" :key="p.id">
-                                    <option :value="p.id" :disabled="p.stock_quantity <= 0"
-                                            x-text="p.name + ' (' + p.product_number + ') - ₹' + parseFloat(p.sale_rate).toFixed(0) + ' [' + p.stock_quantity + ' stock]'"></option>
-                                </template>
+                                @foreach ($products as $p)
+                                    <option value="{{ $p->id }}" {{ $p->stock_quantity <= 0 ? 'disabled' : '' }}>
+                                        {{ $p->name }} ({{ $p->product_number }}) - ₹{{ number_format($p->sale_rate, 0) }} [{{ $p->stock_quantity }} stock]
+                                    </option>
+                                @endforeach
                             </select>
                             <button type="button" @click="addProductById(selectedProductToAdd)"
                                     class="px-3 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-white transition">

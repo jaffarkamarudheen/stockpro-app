@@ -195,10 +195,11 @@
                                     <select :name="'items[' + index + '][product_id]'" x-model="item.product_id" @change="productChanged(index)" required
                                             class="w-full px-3 py-2 text-xs md:text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
                                         <option value="">-- Choose Product --</option>
-                                        <template x-for="p in products" :key="p.id">
-                                            <option :value="p.id" :disabled="p.stock_quantity <= 0"
-                                                    x-text="p.name + ' (' + p.product_number + ') - ' + p.stock_quantity + ' in stock'"></option>
-                                        </template>
+                                        @foreach ($products as $p)
+                                            <option value="{{ $p->id }}" {{ $p->stock_quantity <= 0 ? 'disabled' : '' }}>
+                                                {{ $p->name }} ({{ $p->product_number }}) - {{ $p->stock_quantity }} in stock
+                                            </option>
+                                        @endforeach
                                     </select>
                                 </div>
 
