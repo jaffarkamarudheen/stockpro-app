@@ -53,7 +53,7 @@
             </div>
 
             <!-- Stock Status -->
-            <select name="status" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+            <select name="status" onchange="this.form.submit()" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-medium text-slate-700">
                 <option value="">All Statuses</option>
                 <option value="in_stock" {{ request('status') === 'in_stock' ? 'selected' : '' }}>In Stock</option>
                 <option value="low_stock" {{ request('status') === 'low_stock' ? 'selected' : '' }}>Low Stock</option>
@@ -61,7 +61,7 @@
             </select>
 
             <!-- Sort By Order -->
-            <select name="sort" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+            <select name="sort" onchange="this.form.submit()" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-medium text-slate-700">
                 <option value="latest" {{ request('sort', 'latest') === 'latest' ? 'selected' : '' }}>Latest Added</option>
                 <option value="oldest" {{ request('sort') === 'oldest' ? 'selected' : '' }}>Oldest Added</option>
                 <option value="name_asc" {{ request('sort') === 'name_asc' ? 'selected' : '' }}>Name (A to Z)</option>
@@ -73,16 +73,16 @@
             </select>
 
             <!-- Per Page -->
-            <select name="per_page" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                <option value="15" {{ request('per_page', '50') === '15' ? 'selected' : '' }}>15 / Page</option>
-                <option value="25" {{ request('per_page') === '25' ? 'selected' : '' }}>25 / Page</option>
-                <option value="50" {{ request('per_page', '50') === '50' ? 'selected' : '' }}>50 / Page</option>
-                <option value="100" {{ request('per_page') === '100' ? 'selected' : '' }}>100 / Page</option>
+            <select name="per_page" onchange="this.form.submit()" class="py-2 px-2.5 text-xs font-semibold rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-slate-700">
+                <option value="20" {{ request('per_page', '20') == '20' ? 'selected' : '' }}>20 / Page (Default)</option>
+                <option value="10" {{ request('per_page') == '10' ? 'selected' : '' }}>10 / Page</option>
+                <option value="50" {{ request('per_page') == '50' ? 'selected' : '' }}>50 / Page</option>
+                <option value="100" {{ request('per_page') == '100' ? 'selected' : '' }}>100 / Page</option>
                 <option value="all" {{ request('per_page') === 'all' ? 'selected' : '' }}>All Items</option>
             </select>
 
             @if(isset($users) && $users->count() > 0)
-                <select name="user_id" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                <select name="user_id" onchange="this.form.submit()" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-medium text-slate-700">
                     <option value="">All Creators</option>
                     @foreach($users as $user)
                         <option value="{{ $user->id }}" {{ (string)request('user_id') === (string)$user->id ? 'selected' : '' }}>
@@ -269,11 +269,22 @@
             </table>
         </div>
 
-        @if ($products->hasPages())
-            <div class="p-4 border-t border-slate-200">
-                {{ $products->links() }}
+        <!-- Always-Visible Pagination & Info Bar on Page Load -->
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="text-xs text-slate-600 font-medium">
+                @if ($products->total() > 0)
+                    Showing <span class="font-bold text-slate-900">{{ $products->firstItem() }}</span> to <span class="font-bold text-slate-900">{{ $products->lastItem() }}</span> of <span class="font-bold text-slate-900">{{ $products->total() }}</span> products
+                @else
+                    No products to display
+                @endif
             </div>
-        @endif
+
+            @if ($products->hasPages())
+                <div class="flex items-center">
+                    {{ $products->links() }}
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 @endsection

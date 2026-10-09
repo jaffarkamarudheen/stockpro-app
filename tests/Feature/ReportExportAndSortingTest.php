@@ -245,6 +245,7 @@ class ReportExportAndSortingTest extends TestCase
         // Default latest
         $response = $this->actingAs($this->admin)->get(route('checkouts.index'));
         $response->assertOk();
+        $this->assertEquals(20, $response->viewData('checkouts')->perPage());
         $this->assertEquals($newCheckout->id, $response->viewData('checkouts')->first()->id);
 
         // Sort amount_desc
@@ -258,6 +259,19 @@ class ReportExportAndSortingTest extends TestCase
         // Custom per_page
         $responsePerPage = $this->actingAs($this->admin)->get(route('checkouts.index', ['per_page' => 25]));
         $this->assertEquals(25, $responsePerPage->viewData('checkouts')->perPage());
+    }
+
+    public function test_pagination_and_item_count_renders_on_initial_page_load(): void
+    {
+        Product::factory()->count(5)->create();
+
+        $response = $this->actingAs($this->admin)->get(route('products.index'));
+        $response->assertOk();
+        $this->assertEquals(20, $response->viewData('products')->perPage());
+        // Verify pagination summary is visible on initial load
+        $response->assertSee('Showing', false);
+        $response->assertSee('products', false);
+        $response->assertSee('20 / Page (Default)', false);
     }
 
     public function test_stock_movements_support_sorting_and_custom_per_page(): void
@@ -281,6 +295,7 @@ class ReportExportAndSortingTest extends TestCase
         // Default latest
         $response = $this->actingAs($this->admin)->get(route('stock.index'));
         $response->assertOk();
+        $this->assertEquals(20, $response->viewData('movements')->perPage());
         $this->assertEquals($sm2->id, $response->viewData('movements')->first()->id);
 
         // Sort quantity_desc

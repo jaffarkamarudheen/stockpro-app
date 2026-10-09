@@ -108,7 +108,7 @@
             </div>
 
             <!-- Status Filter -->
-            <select name="status" class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+            <select name="status" onchange="this.form.submit()" class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-medium text-slate-700">
                 <option value="">All Statuses</option>
                 <option value="ordered" {{ request('status') === 'ordered' ? 'selected' : '' }}>Ordered</option>
                 <option value="waiting_for_delivery" {{ request('status') === 'waiting_for_delivery' ? 'selected' : '' }}>Waiting for Delivery</option>
@@ -118,14 +118,14 @@
             </select>
 
             <!-- Promotion Filter -->
-            <select name="is_promotion" class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+            <select name="is_promotion" onchange="this.form.submit()" class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-medium text-slate-700">
                 <option value="">All Types</option>
                 <option value="0" {{ request('is_promotion') === '0' ? 'selected' : '' }}>Sales Only</option>
                 <option value="1" {{ request('is_promotion') === '1' ? 'selected' : '' }}>Promos Only</option>
             </select>
 
             <!-- Sort By -->
-            <select name="sort" class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+            <select name="sort" onchange="this.form.submit()" class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-medium text-slate-700">
                 <option value="latest" {{ request('sort', 'latest') === 'latest' ? 'selected' : '' }}>Date: Latest First</option>
                 <option value="oldest" {{ request('sort') === 'oldest' ? 'selected' : '' }}>Date: Oldest First</option>
                 <option value="amount_desc" {{ request('sort') === 'amount_desc' ? 'selected' : '' }}>Amount: High to Low</option>
@@ -136,14 +136,15 @@
             </select>
 
             <!-- Per Page -->
-            <select name="per_page" class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                <option value="15" {{ request('per_page', '15') == '15' ? 'selected' : '' }}>15 / Page</option>
-                <option value="25" {{ request('per_page') == '25' ? 'selected' : '' }}>25 / Page</option>
+            <select name="per_page" onchange="this.form.submit()" class="py-2 px-2.5 text-xs font-semibold rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-slate-700">
+                <option value="20" {{ request('per_page', '20') == '20' ? 'selected' : '' }}>20 / Page (Default)</option>
+                <option value="10" {{ request('per_page') == '10' ? 'selected' : '' }}>10 / Page</option>
                 <option value="50" {{ request('per_page') == '50' ? 'selected' : '' }}>50 / Page</option>
                 <option value="100" {{ request('per_page') == '100' ? 'selected' : '' }}>100 / Page</option>
+                <option value="all" {{ request('per_page') === 'all' ? 'selected' : '' }}>All Items</option>
             </select>
 
-            <select name="enquiry_from" class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+            <select name="enquiry_from" onchange="this.form.submit()" class="py-2 px-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-medium text-slate-700">
                 <option value="">All Channels</option>
                 @foreach ($enquirySources as $source)
                     <option value="{{ $source }}" {{ request('enquiry_from') === $source ? 'selected' : '' }}>{{ $source }}</option>
@@ -379,11 +380,22 @@
             </table>
         </div>
 
-        @if ($checkouts->hasPages())
-            <div class="p-4 border-t border-slate-200">
-                {{ $checkouts->links() }}
+        <!-- Always-Visible Pagination & Info Bar on Page Load -->
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="text-xs text-slate-600 font-medium">
+                @if ($checkouts->total() > 0)
+                    Showing <span class="font-bold text-slate-900">{{ $checkouts->firstItem() }}</span> to <span class="font-bold text-slate-900">{{ $checkouts->lastItem() }}</span> of <span class="font-bold text-slate-900">{{ $checkouts->total() }}</span> orders
+                @else
+                    No checkout orders to display
+                @endif
             </div>
-        @endif
+
+            @if ($checkouts->hasPages())
+                <div class="flex items-center">
+                    {{ $checkouts->links() }}
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 @endsection

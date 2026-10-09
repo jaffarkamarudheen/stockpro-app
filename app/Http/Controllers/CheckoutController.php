@@ -23,9 +23,10 @@ class CheckoutController extends Controller
 {
     public function index(Request $request): View
     {
-        $perPage = (int) $request->input('per_page', 15);
-        if (! in_array($perPage, [10, 15, 25, 50, 100], true)) {
-            $perPage = 15;
+        $perPageInput = $request->input('per_page', '20');
+        $perPage = $perPageInput === 'all' ? 1000 : (int) $perPageInput;
+        if (! in_array($perPage, [10, 20, 25, 50, 100, 1000], true)) {
+            $perPage = 20;
         }
 
         $checkouts = $this->buildFilteredQuery($request)

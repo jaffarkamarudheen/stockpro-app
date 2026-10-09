@@ -19,7 +19,11 @@ class ProductController extends Controller
     {
         $query = $this->buildFilteredQuery($request);
 
-        $perPage = $request->input('per_page') === 'all' ? 1000 : (int) $request->input('per_page', 25);
+        $perPageInput = $request->input('per_page', '20');
+        $perPage = $perPageInput === 'all' ? 1000 : (int) $perPageInput;
+        if (! in_array($perPage, [10, 20, 25, 50, 100, 1000], true)) {
+            $perPage = 20;
+        }
         $products = $query->with('user')->paginate($perPage)->withQueryString();
 
         $stats = [

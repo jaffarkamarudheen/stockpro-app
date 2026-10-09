@@ -31,14 +31,14 @@
                        class="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
 
-            <select name="type" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+            <select name="type" onchange="this.form.submit()" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-medium text-slate-700">
                 <option value="">All Movement Types</option>
                 <option value="CHECK_IN" {{ request('type') === 'CHECK_IN' ? 'selected' : '' }}>Check-In (Inward +)</option>
                 <option value="CHECK_OUT" {{ request('type') === 'CHECK_OUT' ? 'selected' : '' }}>Check-Out (Sales -)</option>
             </select>
 
             <!-- Sort By -->
-            <select name="sort" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+            <select name="sort" onchange="this.form.submit()" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-medium text-slate-700">
                 <option value="latest" {{ request('sort', 'latest') === 'latest' ? 'selected' : '' }}>Date: Latest First</option>
                 <option value="oldest" {{ request('sort') === 'oldest' ? 'selected' : '' }}>Date: Oldest First</option>
                 <option value="quantity_desc" {{ request('sort') === 'quantity_desc' ? 'selected' : '' }}>Quantity: High to Low</option>
@@ -46,11 +46,12 @@
             </select>
 
             <!-- Per Page -->
-            <select name="per_page" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                <option value="15" {{ request('per_page', '15') == '15' ? 'selected' : '' }}>15 / Page</option>
-                <option value="25" {{ request('per_page') == '25' ? 'selected' : '' }}>25 / Page</option>
+            <select name="per_page" onchange="this.form.submit()" class="py-2 px-2.5 text-xs font-semibold rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-slate-700">
+                <option value="20" {{ request('per_page', '20') == '20' ? 'selected' : '' }}>20 / Page (Default)</option>
+                <option value="10" {{ request('per_page') == '10' ? 'selected' : '' }}>10 / Page</option>
                 <option value="50" {{ request('per_page') == '50' ? 'selected' : '' }}>50 / Page</option>
                 <option value="100" {{ request('per_page') == '100' ? 'selected' : '' }}>100 / Page</option>
+                <option value="all" {{ request('per_page') === 'all' ? 'selected' : '' }}>All Items</option>
             </select>
 
             <button type="submit" class="px-3.5 py-2 text-xs font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition">
@@ -131,11 +132,22 @@
             </table>
         </div>
 
-        @if ($movements->hasPages())
-            <div class="p-4 border-t border-slate-200">
-                {{ $movements->links() }}
+        <!-- Always-Visible Pagination & Info Bar on Page Load -->
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="text-xs text-slate-600 font-medium">
+                @if ($movements->total() > 0)
+                    Showing <span class="font-bold text-slate-900">{{ $movements->firstItem() }}</span> to <span class="font-bold text-slate-900">{{ $movements->lastItem() }}</span> of <span class="font-bold text-slate-900">{{ $movements->total() }}</span> movements
+                @else
+                    No movement records to display
+                @endif
             </div>
-        @endif
+
+            @if ($movements->hasPages())
+                <div class="flex items-center">
+                    {{ $movements->links() }}
+                </div>
+            @endif
+        </div>
     </div>
 
     <!-- Quick Check-In Modal -->
