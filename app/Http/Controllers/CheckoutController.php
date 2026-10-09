@@ -154,7 +154,9 @@ class CheckoutController extends Controller
                     : (float) $product->sale_rate;
 
                 $purchaseRate = (float) $product->purchase_rate;
-                $otherRate = (float) $product->other_rate;
+                $otherRate = isset($itemData['unit_other_rate']) && $itemData['unit_other_rate'] !== null && $itemData['unit_other_rate'] !== ''
+                    ? max(0.0, (float) $itemData['unit_other_rate'])
+                    : (float) $product->other_rate;
                 $unitProfit = round($saleRate - $purchaseRate - $otherRate, 2);
 
                 $lineSubtotal = round($saleRate * $qty, 2);
@@ -312,7 +314,9 @@ class CheckoutController extends Controller
                     : (float) $product->sale_rate;
 
                 $purchaseRate = (float) $product->purchase_rate;
-                $otherRate = (float) $product->other_rate;
+                $otherRate = isset($itemData['unit_other_rate']) && $itemData['unit_other_rate'] !== null && $itemData['unit_other_rate'] !== ''
+                    ? max(0.0, (float) $itemData['unit_other_rate'])
+                    : (float) $product->other_rate;
                 $unitProfit = round($saleRate - $purchaseRate - $otherRate, 2);
 
                 $lineSubtotal = round($saleRate * $qty, 2);

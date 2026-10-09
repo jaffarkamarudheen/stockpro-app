@@ -48,6 +48,7 @@ class UpdateCheckoutRequest extends FormRequest
             'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.unit_sale_rate' => ['nullable', 'numeric', 'min:0'],
+            'items.*.unit_other_rate' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 }

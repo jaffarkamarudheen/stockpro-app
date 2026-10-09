@@ -403,43 +403,67 @@
 
                     <div class="max-h-48 overflow-y-auto space-y-2 pr-1 no-scrollbar">
                         <template x-for="(item, idx) in cart" :key="item.product.id">
-                            <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center gap-2.5 justify-between">
-                                <div class="flex items-center gap-2 min-w-0 flex-1">
-                                    <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 flex-shrink-0 flex items-center justify-center border border-slate-700">
-                                        <template x-if="item.product.photo_url">
-                                            <img :src="item.product.photo_url" class="w-full h-full object-cover">
-                                        </template>
-                                        <template x-if="!item.product.photo_url">
-                                            <i class="fa-regular fa-image text-slate-500 text-xs"></i>
-                                        </template>
-                                    </div>
-                                    <div class="min-w-0 flex-1">
-                                        <p class="text-xs font-bold text-white truncate" x-text="item.product.name"></p>
-                                        <div class="text-[10px] text-slate-400 flex items-center gap-2">
-                                            <span class="font-mono text-indigo-400" x-text="item.product.product_number"></span>
-                                            <span>₹<span x-text="parseFloat(item.unit_sale_rate).toFixed(0)"></span> / unit</span>
-                                            <span class="text-slate-500">(Max: <span x-text="item.product.stock_quantity"></span>)</span>
+                            <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                                <div class="flex items-center gap-2.5 justify-between">
+                                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                                        <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 flex-shrink-0 flex items-center justify-center border border-slate-700">
+                                            <template x-if="item.product.photo_url">
+                                                <img :src="item.product.photo_url" class="w-full h-full object-cover">
+                                            </template>
+                                            <template x-if="!item.product.photo_url">
+                                                <i class="fa-regular fa-image text-slate-500 text-xs"></i>
+                                            </template>
                                         </div>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-xs font-bold text-white truncate" x-text="item.product.name"></p>
+                                            <div class="text-[10px] text-slate-400 flex items-center gap-2">
+                                                <span class="font-mono text-indigo-400" x-text="item.product.product_number"></span>
+                                                <span>₹<span x-text="parseFloat(item.unit_sale_rate).toFixed(0)"></span> / unit</span>
+                                                <span class="text-slate-500">(Max: <span x-text="item.product.stock_quantity"></span>)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Quantity Controls -->
+                                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                                        <button type="button" @click="updateCartQty(idx, -1)"
+                                                class="w-6 h-6 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs flex items-center justify-center">
+                                            -
+                                        </button>
+                                        <span class="w-6 text-center text-xs font-bold text-white" x-text="item.quantity"></span>
+                                        <button type="button" @click="updateCartQty(idx, 1)"
+                                                class="w-6 h-6 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs flex items-center justify-center">
+                                            +
+                                        </button>
+                                        <span class="text-xs font-bold text-emerald-400 w-16 text-right"
+                                              x-text="'₹' + (item.unit_sale_rate * item.quantity).toFixed(0)"></span>
+                                        <button type="button" @click="removeFromCart(idx)"
+                                                class="p-1 text-rose-400 hover:text-rose-300 text-xs">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
                                     </div>
                                 </div>
 
-                                <!-- Quantity Controls -->
-                                <div class="flex items-center gap-1.5 flex-shrink-0">
-                                    <button type="button" @click="updateCartQty(idx, -1)"
-                                            class="w-6 h-6 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs flex items-center justify-center">
-                                        -
-                                    </button>
-                                    <span class="w-6 text-center text-xs font-bold text-white" x-text="item.quantity"></span>
-                                    <button type="button" @click="updateCartQty(idx, 1)"
-                                            class="w-6 h-6 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs flex items-center justify-center">
-                                        +
-                                    </button>
-                                    <span class="text-xs font-bold text-emerald-400 w-16 text-right"
-                                          x-text="'₹' + (item.unit_sale_rate * item.quantity).toFixed(0)"></span>
-                                    <button type="button" @click="removeFromCart(idx)"
-                                            class="p-1 text-rose-400 hover:text-rose-300 text-xs">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </button>
+                                <!-- Overhead Toggles (Delivery ₹50 & Box ₹40) -->
+                                <div class="pt-1.5 border-t border-slate-900 flex items-center justify-between text-[10px]">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-slate-500 font-semibold uppercase text-[9px]">Overhead:</span>
+                                        <button type="button" @click="toggleCartDelivery(idx)"
+                                                :class="item.has_delivery ? 'bg-indigo-950 text-indigo-300 border-indigo-700 font-bold' : 'bg-slate-900 text-slate-500 border-slate-800 line-through'"
+                                                class="px-1.5 py-0.5 rounded border flex items-center gap-1 transition">
+                                            <i class="fa-solid fa-truck-fast text-[9px]"></i>
+                                            <span>Deliv (₹50)</span>
+                                        </button>
+                                        <button type="button" @click="toggleCartPackaging(idx)"
+                                                :class="item.has_packaging ? 'bg-amber-950 text-amber-300 border-amber-700 font-bold' : 'bg-slate-900 text-slate-500 border-slate-800 line-through'"
+                                                class="px-1.5 py-0.5 rounded border flex items-center gap-1 transition">
+                                            <i class="fa-solid fa-box-open text-[9px]"></i>
+                                            <span>Box (₹40)</span>
+                                        </button>
+                                    </div>
+                                    <div class="text-slate-400 text-[10px]">
+                                        Exp: <span class="font-bold text-white">₹<span x-text="item.unit_other_rate"></span></span>
+                                    </div>
                                 </div>
                             </div>
                         </template>
@@ -528,7 +552,23 @@
                         </div>
 
                         <div x-show="!isPromotion">
-                            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Discount (₹)</label>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-[11px] font-semibold text-slate-300">Discount (₹)</label>
+                                <div class="flex items-center gap-1 text-[10px]">
+                                    <button type="button" @click="applyPresetDiscount(50)"
+                                            class="px-1.5 py-0.5 rounded bg-indigo-900/60 hover:bg-indigo-900 text-indigo-300 font-semibold" title="Pass delivery discount to customer">
+                                        +₹50 (Deliv)
+                                    </button>
+                                    <button type="button" @click="applyPresetDiscount(40)"
+                                            class="px-1.5 py-0.5 rounded bg-amber-900/60 hover:bg-amber-900 text-amber-300 font-semibold" title="Pass box discount to customer">
+                                        +₹40 (Box)
+                                    </button>
+                                    <button type="button" @click="discountAmount = 0"
+                                            class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-400">
+                                        Reset
+                                    </button>
+                                </div>
+                            </div>
                             <input type="number" step="0.01" min="0" x-model="discountAmount" placeholder="0.00"
                                    class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-indigo-500">
                         </div>
@@ -658,7 +698,9 @@
                     const profit = this.cart.reduce((sum, item) => {
                         const sale = parseFloat(item.unit_sale_rate) || 0;
                         const cost = parseFloat(item.product.purchase_rate) || 0;
-                        const other = parseFloat(item.product.other_rate || 0);
+                        const other = (item.unit_other_rate !== undefined && item.unit_other_rate !== null && item.unit_other_rate !== '')
+                            ? parseFloat(item.unit_other_rate)
+                            : (parseFloat(item.product.other_rate) || 0);
                         const unitProfit = sale - cost - other;
                         return sum + (unitProfit * (parseInt(item.quantity) || 0));
                     }, 0);
@@ -680,14 +722,45 @@
                         }
                         existing.quantity += qty;
                     } else {
+                        const otherRate = parseFloat(p.other_rate) || 90;
                         this.cart.push({
                             product: p,
                             quantity: Math.min(qty, p.stock_quantity),
-                            unit_sale_rate: parseFloat(p.sale_rate)
+                            unit_sale_rate: parseFloat(p.sale_rate),
+                            unit_other_rate: otherRate,
+                            has_delivery: otherRate >= 50,
+                            has_packaging: (otherRate % 50 === 40) || (otherRate >= 90) || (otherRate === 40)
                         });
                     }
 
                     this.showToast('Added ' + p.name + ' to checkout (' + this.totalCartCount + ' units)', 'success');
+                },
+
+                toggleCartDelivery(idx) {
+                    const item = this.cart[idx];
+                    if (!item) return;
+                    item.has_delivery = !item.has_delivery;
+                    this.recomputeCartOverhead(idx);
+                },
+
+                toggleCartPackaging(idx) {
+                    const item = this.cart[idx];
+                    if (!item) return;
+                    item.has_packaging = !item.has_packaging;
+                    this.recomputeCartOverhead(idx);
+                },
+
+                recomputeCartOverhead(idx) {
+                    const item = this.cart[idx];
+                    if (!item) return;
+                    let rate = 0;
+                    if (item.has_delivery) rate += 50;
+                    if (item.has_packaging) rate += 40;
+                    item.unit_other_rate = rate;
+                },
+
+                applyPresetDiscount(amount) {
+                    this.discountAmount = (parseFloat(this.discountAmount || 0) + amount).toFixed(2);
                 },
 
                 addProductById(productId) {
@@ -834,17 +907,25 @@
                     if (directProduct && directProduct.stock_quantity > 0) {
                         const exists = this.cart.find(i => i.product.id === directProduct.id);
                         if (!exists) {
+                            const otherRate = parseFloat(directProduct.other_rate) || 90;
                             this.cart.push({
                                 product: directProduct,
                                 quantity: 1,
-                                unit_sale_rate: parseFloat(directProduct.sale_rate)
+                                unit_sale_rate: parseFloat(directProduct.sale_rate),
+                                unit_other_rate: otherRate,
+                                has_delivery: otherRate >= 50,
+                                has_packaging: (otherRate % 50 === 40) || (otherRate >= 90) || (otherRate === 40)
                             });
                         }
                     } else if (this.cart.length === 0 && this.activeProduct && this.activeProduct.stock_quantity > 0) {
+                        const otherRate = parseFloat(this.activeProduct.other_rate) || 90;
                         this.cart.push({
                             product: this.activeProduct,
                             quantity: 1,
-                            unit_sale_rate: parseFloat(this.activeProduct.sale_rate)
+                            unit_sale_rate: parseFloat(this.activeProduct.sale_rate),
+                            unit_other_rate: otherRate,
+                            has_delivery: otherRate >= 50,
+                            has_packaging: (otherRate % 50 === 40) || (otherRate >= 90) || (otherRate === 40)
                         });
                     }
 
@@ -879,7 +960,8 @@
                             items: this.cart.map(item => ({
                                 product_id: item.product.id,
                                 quantity: item.quantity,
-                                unit_sale_rate: item.unit_sale_rate
+                                unit_sale_rate: item.unit_sale_rate,
+                                unit_other_rate: item.unit_other_rate
                             }))
                         };
 

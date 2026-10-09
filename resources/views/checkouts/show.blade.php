@@ -220,6 +220,7 @@
                         <th class="px-4 py-3">Item Description</th>
                         <th class="px-4 py-3 text-center">Qty</th>
                         <th class="px-4 py-3 text-right">Unit Sale</th>
+                        <th class="px-4 py-3 text-right">Overhead</th>
                         <th class="px-4 py-3 text-right">Subtotal</th>
                         <th class="px-4 py-3 text-right">Profit</th>
                     </tr>
@@ -236,6 +237,27 @@
                             </td>
                             <td class="px-4 py-3.5 text-right font-medium">
                                 ₹{{ number_format($item->unit_sale_rate, 2) }}
+                            </td>
+                            <td class="px-4 py-3.5 text-right text-xs">
+                                @if ((float) $item->unit_other_rate === 90.0)
+                                    <span class="inline-flex items-center gap-1 text-slate-600 bg-slate-100 px-2 py-0.5 rounded font-medium" title="Delivery ₹50 + Box ₹40">
+                                        🚚 ₹50 + 📦 ₹40 (₹90)
+                                    </span>
+                                @elseif ((float) $item->unit_other_rate === 40.0)
+                                    <span class="inline-flex items-center gap-1 text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-semibold" title="Delivery Waived (-₹50)">
+                                        📦 Box only (₹40)
+                                    </span>
+                                @elseif ((float) $item->unit_other_rate === 50.0)
+                                    <span class="inline-flex items-center gap-1 text-indigo-800 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded font-semibold" title="Box Waived (-₹40)">
+                                        🚚 Deliv only (₹50)
+                                    </span>
+                                @elseif ((float) $item->unit_other_rate === 0.0)
+                                    <span class="inline-flex items-center gap-1 text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-semibold" title="Overhead Waived">
+                                        ✨ Waived (₹0)
+                                    </span>
+                                @else
+                                    <span class="text-slate-600 font-medium">₹{{ number_format($item->unit_other_rate, 2) }}</span>
+                                @endif
                             </td>
                             <td class="px-4 py-3.5 text-right font-bold text-slate-800">
                                 ₹{{ number_format($item->subtotal_sale, 2) }}

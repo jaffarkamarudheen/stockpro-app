@@ -311,4 +311,70 @@ class CheckoutWorkflowTest extends TestCase
         $response->assertSee('Meera Patel');
         $response->assertSee('Download PDF');
     }
+
+    public function test_checkout_with_waived_delivery_charge_overhead_calculates_profit_accurately(): void
+    {
+        // Product: Sale 450, Purchase 150. Default overhead: 90 (Delivery 50 + Box 40)
+        // With delivery waived: overhead is 40. User gives ₹50 discount to customer.
+        $response = $this->actingAs($this->admin)->post(route('checkouts.store'), [
+            'customer_name' => 'Kavya Rao',
+            'customer_address' => 'Store Pickup - Indiranagar',
+            'customer_phone' => '9845012345',
+            'enquiry_from' => 'Store Walk-in',
+            'is_promotion' => false,
+            'discount_amount' => 50.00,
+            'status' => 'delivered',
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'quantity' => 1,
+                    'unit_sale_rate' => 450.00,
+                    'unit_other_rate' => 40.00, // Delivery waived (saved ₹50)
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect();
+
+        $checkout = Checkout::latest()->first();
+        $this->assertEquals(400.00, (float) $checkout->total_sale_amount); // 450 - 50 discount
+        $this->assertEquals(40.00, (float) $checkout->total_other_cost); // only box expense incurred
+        $this->assertEquals(150.00, (float) $checkout->total_purchase_cost);
+        // Correct profit: 400 sale - 150 purchase - 40 overhead = +210 profit
+        $this->assertEquals(210.00, (float) $checkout->total_profit);
+
+        $item = $checkout->items->first();
+        $this->assertEquals(40.00, (float) $item->unit_other_rate);
+        $this->assertEquals(260.00, (float) $item->unit_profit); // 450 - 150 - 40
+    }
+
+    public function test_checkout_with_both_delivery_and_box_waived(): void
+    {
+        // Both delivery and packaging waived: overhead is 0
+        $response = $this->actingAs($this->admin)->post(route('checkouts.store'), [
+            'customer_name' => 'Deepak Verma',
+            'customer_address' => 'Local Handover',
+            'enquiry_from' => 'Website',
+            'is_promotion' => false,
+            'discount_amount' => 0.00,
+            'status' => 'received',
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'quantity' => 2,
+                    'unit_sale_rate' => 450.00,
+                    'unit_other_rate' => 0.00, // ₹0 overhead
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect();
+
+        $checkout = Checkout::latest()->first();
+        $this->assertEquals(900.00, (float) $checkout->total_sale_amount);
+        $this->assertEquals(0.00, (float) $checkout->total_other_cost);
+        $this->assertEquals(300.00, (float) $checkout->total_purchase_cost);
+        // Profit: 900 - 300 - 0 = +600 profit
+        $this->assertEquals(600.00, (float) $checkout->total_profit);
+    }
 }
