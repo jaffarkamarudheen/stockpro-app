@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. Seed Default Admin & Operator Users
-        User::firstOrCreate(
+        User::updateOrCreate(
             ['email' => 'admin@stockpro.com'],
             [
                 'name' => 'Admin User',
@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        User::firstOrCreate(
+        User::updateOrCreate(
             ['email' => 'operator@stockpro.com'],
             [
                 'name' => 'Store Operator',
