@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Admin Inventory & Sales') - StockPro</title>
+    <title>@yield('title', 'Admin Inventory & Sales') - Cherry Adorn StockPro</title>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/cherry-adorn-logo.jpg') }}">
+    <link rel="shortcut icon" href="{{ asset('images/cherry-adorn-logo.jpg') }}">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -23,13 +25,11 @@
         <!-- Sidebar for Desktop -->
         <aside class="hidden md:flex md:flex-col md:w-64 bg-slate-900 text-slate-200 border-r border-slate-800">
             <!-- Brand Logo -->
-            <div class="h-16 flex items-center px-6 bg-slate-950 border-b border-slate-800 gap-3">
-                <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
-                    <i class="fa-solid fa-boxes-stacked text-lg"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-base tracking-wide text-white leading-tight">StockPro</h1>
-                    <p class="text-[11px] text-slate-400 font-medium">Inventory & Sales System</p>
+            <div class="h-16 flex items-center px-4 bg-slate-950 border-b border-slate-800 gap-3">
+                <img src="{{ asset('images/cherry-adorn-logo.jpg') }}" alt="Cherry Adorn Logo" class="w-10 h-10 rounded-full object-cover border border-pink-300/40 shadow-sm shrink-0">
+                <div class="overflow-hidden">
+                    <h1 class="font-bold text-sm tracking-wide text-white leading-tight truncate">Cherry Adorn</h1>
+                    <p class="text-[11px] text-pink-300 font-semibold tracking-wide">StockPro System</p>
                 </div>
             </div>
 
@@ -118,10 +118,11 @@
                      class="relative mr-16 flex w-full max-w-xs flex-1 bg-slate-900 flex-col">
                     <div class="h-16 flex items-center justify-between px-6 bg-slate-950 border-b border-slate-800">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
-                                <i class="fa-solid fa-boxes-stacked"></i>
+                            <img src="{{ asset('images/cherry-adorn-logo.jpg') }}" alt="Cherry Adorn Logo" class="w-9 h-9 rounded-full object-cover border border-pink-300/40 shrink-0">
+                            <div>
+                                <span class="font-bold text-sm text-white block leading-tight">Cherry Adorn</span>
+                                <span class="text-[10px] text-pink-300 font-semibold block">StockPro System</span>
                             </div>
-                            <span class="font-bold text-white">StockPro</span>
                         </div>
                         <button type="button" @click="sidebarOpen = false" class="text-slate-400 hover:text-white p-2">
                             <i class="fa-solid fa-xmark text-lg"></i>

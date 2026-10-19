@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>StockPro Mobile - Visual Stock & Checkout</title>
+    <title>Cherry Adorn StockPro - Visual Stock & Checkout</title>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/cherry-adorn-logo.jpg') }}">
+    <link rel="shortcut icon" href="{{ asset('images/cherry-adorn-logo.jpg') }}">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -23,12 +25,10 @@
     <!-- Top Mobile App Bar -->
     <header class="h-14 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between sticky top-0 z-40">
         <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-sm shadow">
-                <i class="fa-solid fa-boxes-stacked"></i>
-            </div>
+            <img src="{{ asset('images/cherry-adorn-logo.jpg') }}" alt="Cherry Adorn" class="w-9 h-9 rounded-full object-cover border border-pink-300/40 shadow-xs shrink-0">
             <div>
-                <h1 class="text-sm font-bold text-white tracking-wide">StockPro Mobile</h1>
-                <p class="text-[10px] text-emerald-400 font-medium">Visual Photo & Name Lookup (No AI)</p>
+                <h1 class="text-sm font-bold text-white tracking-wide leading-tight">Cherry Adorn <span class="text-pink-400">StockPro</span></h1>
+                <p class="text-[10px] text-pink-300 font-medium">The Little Jewellery Studio</p>
             </div>
         </div>
 

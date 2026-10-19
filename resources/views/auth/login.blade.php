@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - StockPro</title>
+    <title>Login - Cherry Adorn StockPro</title>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/cherry-adorn-logo.jpg') }}">
+    <link rel="shortcut icon" href="{{ asset('images/cherry-adorn-logo.jpg') }}">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -12,12 +14,14 @@
 <body class="h-full flex items-center justify-center p-4 font-sans antialiased text-slate-100">
     <div class="w-full max-w-md space-y-6">
         <!-- Logo & Title -->
-        <div class="text-center space-y-2">
-            <div class="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white text-2xl mx-auto shadow-xl shadow-indigo-600/30">
-                <i class="fa-solid fa-boxes-stacked"></i>
+        <div class="text-center space-y-3">
+            <div class="relative inline-block">
+                <img src="{{ asset('images/cherry-adorn-logo.jpg') }}" alt="Cherry Adorn Logo" class="w-24 h-24 rounded-full object-cover border-2 border-pink-300 shadow-xl shadow-pink-500/20 mx-auto">
             </div>
-            <h1 class="text-2xl font-black tracking-tight text-white">StockPro</h1>
-            <p class="text-xs text-slate-400">Inventory Management & Mobile Sales System</p>
+            <div>
+                <h1 class="text-2xl font-black tracking-tight text-white">Cherry Adorn <span class="text-pink-400">StockPro</span></h1>
+                <p class="text-xs text-slate-400 mt-1">The Little Jewellery Studio • Inventory & Sales System</p>
+            </div>
         </div>
 
         <!-- Login Card -->

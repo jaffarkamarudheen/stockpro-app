@@ -44,13 +44,16 @@ chmod 664 /var/www/html/database/database.sqlite
 
 # If DATABASE_URL is provided, parse parameters and inject directly into .env
 if [ -n "$DATABASE_URL" ]; then
-    echo "PostgreSQL DATABASE_URL detected. Parsing parameters into .env..."
+    echo "DATABASE_URL detected. Parsing parameters into .env..."
     php -r '
     $url = getenv("DATABASE_URL");
     if ($url) {
         $p = parse_url($url);
+        $scheme = strtolower($p["scheme"] ?? "");
+        $driver = (str_contains($scheme, "postgres") || str_contains($scheme, "pgsql")) ? "pgsql" : "mysql";
+        $defaultPort = ($driver === "pgsql") ? 5432 : 3306;
         $host = $p["host"] ?? "";
-        $port = $p["port"] ?? 5432;
+        $port = $p["port"] ?? $defaultPort;
         $user = $p["user"] ?? "";
         $pass = $p["pass"] ?? "";
         $db   = ltrim($p["path"] ?? "", "/");
@@ -67,11 +70,37 @@ if [ -n "$DATABASE_URL" ]; then
         $env = preg_replace("/^DATABASE_URL=.*$/m", "", $env);
         $env = preg_replace("/^LOG_CHANNEL=.*$/m", "", $env);
 
-        $append = "\nDB_CONNECTION=pgsql\nDB_HOST={$host}\nDB_PORT={$port}\nDB_DATABASE={$db}\nDB_USERNAME={$user}\nDB_PASSWORD={$pass}\nDATABASE_URL=\"{$url}\"\nLOG_CHANNEL=stderr\n";
+        $append = "\nDB_CONNECTION={$driver}\nDB_HOST={$host}\nDB_PORT={$port}\nDB_DATABASE={$db}\nDB_USERNAME={$user}\nDB_PASSWORD={$pass}\nDATABASE_URL=\"{$url}\"\nLOG_CHANNEL=stderr\n";
         file_put_contents($envPath, trim($env) . "\n" . $append);
     }
     '
-    export DB_CONNECTION=pgsql
+    case "$DATABASE_URL" in
+        postgres*|pgsql*) export DB_CONNECTION="pgsql" ;;
+        *) export DB_CONNECTION="mysql" ;;
+    esac
+elif [ -n "$DB_HOST" ]; then
+    echo "Explicit database environment variables detected (Host: ${DB_HOST}). Injecting into .env..."
+    php -r '
+    $envPath = "/var/www/html/.env";
+    $env = file_exists($envPath) ? file_get_contents($envPath) : "";
+    $driver = getenv("DB_CONNECTION") ?: "mysql";
+    $host = getenv("DB_HOST");
+    $port = getenv("DB_PORT") ?: ($driver === "pgsql" ? "5432" : "3306");
+    $db = getenv("DB_DATABASE") ?: "stockpro";
+    $user = getenv("DB_USERNAME") ?: "root";
+    $pass = getenv("DB_PASSWORD") ?: "";
+
+    $env = preg_replace("/^DB_CONNECTION=.*$/m", "", $env);
+    $env = preg_replace("/^DB_HOST=.*$/m", "", $env);
+    $env = preg_replace("/^DB_PORT=.*$/m", "", $env);
+    $env = preg_replace("/^DB_DATABASE=.*$/m", "", $env);
+    $env = preg_replace("/^DB_USERNAME=.*$/m", "", $env);
+    $env = preg_replace("/^DB_PASSWORD=.*$/m", "", $env);
+
+    $append = "\nDB_CONNECTION={$driver}\nDB_HOST={$host}\nDB_PORT={$port}\nDB_DATABASE={$db}\nDB_USERNAME={$user}\nDB_PASSWORD={$pass}\n";
+    file_put_contents($envPath, trim($env) . "\n" . $append);
+    '
+    export DB_CONNECTION="${DB_CONNECTION:-mysql}"
 fi
 
 # Ensure .env is readable by Apache

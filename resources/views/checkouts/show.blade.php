@@ -144,7 +144,7 @@
                 <div>
                     <h2 class="text-xl font-black text-rose-950 tracking-tight">Cherry Adorn</h2>
                     <p class="text-xs uppercase font-bold tracking-wider text-pink-600">The Little Jewellery Studio</p>
-                    <p class="text-[11px] text-slate-400">Inventory & Customer Order Management</p>
+                    <p class="text-[11px] text-slate-400">StockPro Order & Inventory Management</p>
                 </div>
             </div>
 

@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cherry Adorn - Financial Report {{ $selectedYear }}</title>
+    <title>Cherry Adorn StockPro - Financial Report {{ $selectedYear }}</title>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/cherry-adorn-logo.jpg') }}">
+    <link rel="shortcut icon" href="{{ asset('images/cherry-adorn-logo.jpg') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -129,7 +131,7 @@
         <!-- Footer Notice -->
         <div class="border-t border-slate-200 pt-4 flex items-center justify-between text-[10px] text-slate-400">
             <span>Cherry Adorn • The Little Jewellery Studio</span>
-            <span>Generated from StockPro Inventory System</span>
+            <span>Generated from Cherry Adorn StockPro System</span>
         </div>
     </div>
 
