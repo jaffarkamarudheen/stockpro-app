@@ -246,65 +246,107 @@
                     </div>
 
                     <!-- Combo / Bundle Product Option Card -->
-                    <div class="p-4 rounded-xl border border-indigo-200 bg-indigo-50/50 space-y-3">
-                        <div class="flex items-center justify-between">
-                            <label class="relative inline-flex items-center cursor-pointer gap-3">
-                                <input type="checkbox" name="is_combo" value="1" x-model="isCombo" class="sr-only peer">
-                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    <div class="p-5 rounded-2xl border transition-all duration-200"
+                         :class="isCombo ? 'border-indigo-300 bg-indigo-50/70 shadow-xs' : 'border-slate-200 bg-slate-50/50'">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="flex items-start sm:items-center gap-3.5 cursor-pointer select-none" @click="isCombo = !isCombo">
+                                <!-- Modern Alpine Switch Button -->
+                                <button type="button"
+                                        @click.stop="isCombo = !isCombo"
+                                        class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2"
+                                        :class="isCombo ? 'bg-indigo-600' : 'bg-slate-300'"
+                                        role="switch"
+                                        :aria-checked="isCombo">
+                                    <span class="sr-only">Toggle Combo Product</span>
+                                    <span aria-hidden="true"
+                                          class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                          :class="isCombo ? 'translate-x-5' : 'translate-x-0'"></span>
+                                </button>
+                                <input type="hidden" name="is_combo" :value="isCombo ? '1' : '0'">
+
                                 <div>
-                                    <span class="text-sm font-bold text-slate-800">Combo / Bundle Product</span>
-                                    <span class="block text-xs text-slate-500">Sell multiple individual items bundled together (e.g. Earring + Locket set). Stock deducts from both!</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-bold text-slate-800">Combo / Bundle Product</span>
+                                        <span x-show="isCombo" x-cloak class="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-indigo-600 text-white shadow-xs">
+                                            Active Set
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-0.5">Bundle multiple items together (e.g. Earring + Locket set). Stock deducts from both combo and parts.</p>
                                 </div>
-                            </label>
-                            <span x-show="isCombo" class="px-2.5 py-0.5 text-xs font-bold uppercase rounded-full bg-indigo-100 text-indigo-700">
-                                Combo Active
-                            </span>
+                            </div>
+
+                            <button type="button"
+                                    @click="isCombo = !isCombo"
+                                    class="self-start sm:self-auto px-3 py-1.5 rounded-lg text-xs font-semibold border transition flex items-center gap-1.5"
+                                    :class="isCombo ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'">
+                                <i class="fa-solid" :class="isCombo ? 'fa-check' : 'fa-plus'"></i>
+                                <span x-text="isCombo ? 'Combo Enabled' : 'Make This a Combo'"></span>
+                            </button>
                         </div>
 
                         <!-- Interactive Component List -->
-                        <div x-show="isCombo" x-cloak class="pt-3 border-t border-indigo-200/60 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Constituent Items</h4>
-                                <div class="flex items-center gap-2">
-                                    <button type="button" @click="calcComponentPurchaseRate()" class="px-2 py-1 text-[11px] font-semibold text-indigo-700 bg-white border border-indigo-300 rounded hover:bg-indigo-50 transition" title="Sum constituent purchase rates">
-                                        Auto Purchase Cost
+                        <div x-show="isCombo" x-cloak class="pt-4 mt-4 border-t border-indigo-200/80 space-y-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-boxes-stacked text-indigo-600"></i> Constituent Components
+                                    </h4>
+                                    <p class="text-[11px] text-slate-500">Select which individual products make up 1 unit of this combo set.</p>
+                                </div>
+
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button type="button" @click="calcComponentPurchaseRate()"
+                                            class="px-2.5 py-1.5 text-xs font-semibold text-indigo-700 bg-white border border-indigo-300 rounded-lg hover:bg-indigo-50 shadow-xs transition flex items-center gap-1.5"
+                                            title="Sum constituent purchase rates into Purchase Cost">
+                                        <i class="fa-solid fa-calculator text-[10px]"></i> Sum Cost
                                     </button>
-                                    <button type="button" @click="calcComponentSaleRate()" class="px-2 py-1 text-[11px] font-semibold text-indigo-700 bg-white border border-indigo-300 rounded hover:bg-indigo-50 transition" title="Sum constituent sale rates">
-                                        Auto Sale Rate
+                                    <button type="button" @click="calcComponentSaleRate()"
+                                            class="px-2.5 py-1.5 text-xs font-semibold text-indigo-700 bg-white border border-indigo-300 rounded-lg hover:bg-indigo-50 shadow-xs transition flex items-center gap-1.5"
+                                            title="Sum constituent sale rates into Sale Rate">
+                                        <i class="fa-solid fa-tag text-[10px]"></i> Sum Sale Rate
                                     </button>
-                                    <button type="button" @click="addComponent()" class="px-2.5 py-1 text-xs font-semibold text-white bg-indigo-600 rounded hover:bg-indigo-700 transition flex items-center gap-1">
-                                        <i class="fa-solid fa-plus text-[10px]"></i> Add Component
+                                    <button type="button" @click="addComponent()"
+                                            class="px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-xs transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-plus text-[10px]"></i> Add Item
                                     </button>
                                 </div>
                             </div>
 
                             <template x-if="comboItems.length === 0">
-                                <div class="p-4 text-center border-2 border-dashed border-indigo-200 rounded-lg text-xs text-slate-500 bg-white">
-                                    No items added yet. Click <strong>Add Component</strong> to select constituent products for this combo.
+                                <div class="p-5 text-center border-2 border-dashed border-indigo-200 rounded-xl bg-white space-y-1">
+                                    <i class="fa-solid fa-layer-group text-indigo-400 text-xl"></i>
+                                    <div class="text-xs font-semibold text-slate-700">No constituent products added yet</div>
+                                    <p class="text-[11px] text-slate-500">Click <strong>Add Item</strong> above to choose which products are inside this set.</p>
                                 </div>
                             </template>
 
-                            <div class="space-y-2">
+                            <div class="space-y-2.5">
                                 <template x-for="(item, index) in comboItems" :key="index">
-                                    <div class="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg shadow-xs">
-                                        <div class="flex-1">
-                                            <label class="block text-[10px] font-semibold uppercase text-slate-400 mb-1">Component Product</label>
+                                    <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs hover:border-indigo-200 transition">
+                                        <div class="flex-1 min-w-0">
+                                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                                Select Product <span class="text-rose-500">*</span>
+                                            </label>
                                             <select :name="'combo_items[' + index + '][product_id]'" x-model="item.product_id"
-                                                    class="w-full text-xs px-2.5 py-1.5 rounded border border-slate-300 focus:ring-1 focus:ring-indigo-500 outline-none">
+                                                    class="w-full text-xs font-medium px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50/50">
                                                 <template x-for="prod in availableProducts" :key="prod.id">
                                                     <option :value="prod.id" x-text="prod.name + ' (' + prod.product_number + ') - Stock: ' + prod.stock_quantity" :selected="prod.id == item.product_id"></option>
                                                 </template>
                                             </select>
                                         </div>
 
-                                        <div class="w-24">
-                                            <label class="block text-[10px] font-semibold uppercase text-slate-400 mb-1">Qty in Set</label>
+                                        <div class="w-full sm:w-28">
+                                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                                Qty / Set <span class="text-rose-500">*</span>
+                                            </label>
                                             <input type="number" min="1" :name="'combo_items[' + index + '][quantity]'" x-model="item.quantity"
-                                                   class="w-full text-xs px-2.5 py-1.5 rounded border border-slate-300 focus:ring-1 focus:ring-indigo-500 outline-none">
+                                                   class="w-full text-xs font-bold text-slate-800 px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
                                         </div>
 
-                                        <div class="pt-5">
-                                            <button type="button" @click="removeComponent(index)" class="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded transition" title="Remove component">
+                                        <div class="sm:pt-5 flex justify-end">
+                                            <button type="button" @click="removeComponent(index)"
+                                                    class="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
+                                                    title="Remove component from set">
                                                 <i class="fa-solid fa-trash-can text-sm"></i>
                                             </button>
                                         </div>
