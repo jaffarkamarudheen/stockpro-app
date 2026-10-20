@@ -6,6 +6,7 @@ use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -25,6 +26,7 @@ class Product extends Model
         'name',
         'photo_path',
         'quality',
+        'is_combo',
         'price',
         'purchase_rate',
         'sale_rate',
@@ -40,6 +42,7 @@ class Product extends Model
      */
     protected $casts = [
         'user_id' => 'integer',
+        'is_combo' => 'boolean',
         'price' => 'decimal:2',
         'purchase_rate' => 'decimal:2',
         'sale_rate' => 'decimal:2',
@@ -202,5 +205,82 @@ class Product extends Model
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class);
+    }
+
+    /**
+     * Component items mapped into this combo product.
+     *
+     * @return HasMany<ComboItem, $this>
+     */
+    public function comboItems(): HasMany
+    {
+        return $this->hasMany(ComboItem::class, 'combo_product_id');
+    }
+
+    /**
+     * The actual individual products that make up this combo.
+     *
+     * @return BelongsToMany<Product, $this>
+     */
+    public function components(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'combo_items', 'combo_product_id', 'item_product_id')
+            ->withPivot('quantity')
+            ->withTimestamps();
+    }
+
+    /**
+     * Any combo bundles that include this individual product.
+     *
+     * @return BelongsToMany<Product, $this>
+     */
+    public function parentCombos(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'combo_items', 'item_product_id', 'combo_product_id')
+            ->withPivot('quantity')
+            ->withTimestamps();
+    }
+
+    /**
+     * Check if this product is a combo bundle.
+     */
+    public function isCombo(): bool
+    {
+        return (bool) $this->is_combo;
+    }
+
+    /**
+     * Effective available stock:
+     * - For regular products, returns stock_quantity.
+     * - For combo products, returns the minimum between the combo's own stock_quantity
+     *   and the maximum number of combos that can be assembled from the available component stocks.
+     */
+    public function getEffectiveStockAttribute(): int
+    {
+        if (! $this->is_combo) {
+            return max(0, (int) $this->stock_quantity);
+        }
+
+        $comboStock = max(0, (int) $this->stock_quantity);
+
+        if (! $this->relationLoaded('comboItems')) {
+            $this->load('comboItems.itemProduct');
+        }
+
+        if ($this->comboItems->isEmpty()) {
+            return $comboStock;
+        }
+
+        $componentLimits = [];
+        foreach ($this->comboItems as $comboItem) {
+            $comp = $comboItem->itemProduct;
+            $requiredPerCombo = max(1, (int) $comboItem->quantity);
+            $available = $comp ? max(0, (int) $comp->stock_quantity) : 0;
+            $componentLimits[] = (int) floor($available / $requiredPerCombo);
+        }
+
+        $maxFromComponents = ! empty($componentLimits) ? min($componentLimits) : $comboStock;
+
+        return min($comboStock, $maxFromComponents);
     }
 }

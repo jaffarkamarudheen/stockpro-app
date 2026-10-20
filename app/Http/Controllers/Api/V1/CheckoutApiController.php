@@ -72,15 +72,36 @@ class CheckoutApiController extends Controller
             $isPromotion = (bool) ($validated['is_promotion'] ?? false);
             $discountAmount = max(0.0, (float) ($validated['discount_amount'] ?? 0));
 
+            // Step 1: Pre-calculate required quantities across all direct products and combo components
+            $requiredQuantities = [];
             foreach ($validated['items'] as $itemData) {
-                $product = Product::lockForUpdate()->findOrFail($itemData['product_id']);
                 $qty = (int) $itemData['quantity'];
+                $requiredQuantities[$itemData['product_id']] = ($requiredQuantities[$itemData['product_id']] ?? 0) + $qty;
 
-                if ($product->stock_quantity < $qty) {
+                $prod = Product::with('comboItems')->find($itemData['product_id']);
+                if ($prod && $prod->is_combo) {
+                    foreach ($prod->comboItems as $ci) {
+                        $compQty = $ci->quantity * $qty;
+                        $requiredQuantities[$ci->item_product_id] = ($requiredQuantities[$ci->item_product_id] ?? 0) + $compQty;
+                    }
+                }
+            }
+
+            // Step 2: Lock products and validate stock sufficiency
+            $lockedProducts = [];
+            foreach (array_keys($requiredQuantities) as $productId) {
+                $lockedProducts[$productId] = Product::lockForUpdate()->with('comboItems.itemProduct')->findOrFail($productId);
+                $needed = $requiredQuantities[$productId];
+                if ($lockedProducts[$productId]->stock_quantity < $needed) {
                     throw ValidationException::withMessages([
-                        'items' => ["Not enough stock for {$product->name}. Requested: {$qty}, Available: {$product->stock_quantity}"],
+                        'items' => ["Not enough stock for {$lockedProducts[$productId]->name}. Required: {$needed}, Available: {$lockedProducts[$productId]->stock_quantity}"],
                     ]);
                 }
+            }
+
+            foreach ($validated['items'] as $itemData) {
+                $product = $lockedProducts[$itemData['product_id']];
+                $qty = (int) $itemData['quantity'];
 
                 $saleRate = isset($itemData['unit_sale_rate']) && $itemData['unit_sale_rate'] !== null && $itemData['unit_sale_rate'] !== ''
                     ? (float) $itemData['unit_sale_rate']
@@ -163,7 +184,7 @@ class CheckoutApiController extends Controller
                     'subtotal_profit' => $item['subtotal_profit'],
                 ]);
 
-                // Deduct stock
+                // Deduct stock for product/combo
                 $item['product']->decrement('stock_quantity', $item['quantity']);
 
                 // Record stock movement
@@ -174,9 +195,27 @@ class CheckoutApiController extends Controller
                     'reference' => 'Order #'.$checkout->order_number,
                     'notes' => ($isPromotion ? '[PROMOTION] ' : '').'Customer: '.$checkout->customer_name,
                 ]);
+
+                // If combo, deduct component stocks and record movements
+                if ($item['product']->is_combo) {
+                    foreach ($item['product']->comboItems as $comboItem) {
+                        $compDeductQty = $comboItem->quantity * $item['quantity'];
+                        $componentProduct = $lockedProducts[$comboItem->item_product_id] ?? Product::find($comboItem->item_product_id);
+                        if ($componentProduct) {
+                            $componentProduct->decrement('stock_quantity', $compDeductQty);
+                            StockMovement::create([
+                                'product_id' => $componentProduct->id,
+                                'type' => 'CHECK_OUT',
+                                'quantity' => -$compDeductQty,
+                                'reference' => 'Order #'.$checkout->order_number,
+                                'notes' => ($isPromotion ? '[PROMOTION] ' : '').'[COMBO: '.$item['product']->name.'] Customer: '.$checkout->customer_name,
+                            ]);
+                        }
+                    }
+                }
             }
 
-            return $checkout->load('items.product');
+            return $checkout->load('items.product.comboItems.itemProduct');
         });
 
         return (new CheckoutResource($checkout))
@@ -191,7 +230,42 @@ class CheckoutApiController extends Controller
         DB::transaction(function () use ($validated, $checkout) {
             // Restore previous stock
             foreach ($checkout->items as $existingItem) {
-                $existingItem->product?->increment('stock_quantity', $existingItem->quantity);
+                if ($existingItem->product) {
+                    $existingItem->product->increment('stock_quantity', $existingItem->quantity);
+
+                    if ($existingItem->product->is_combo) {
+                        foreach ($existingItem->product->comboItems as $comboItem) {
+                            $comboItem->itemProduct?->increment('stock_quantity', $comboItem->quantity * $existingItem->quantity);
+                        }
+                    }
+                }
+            }
+
+            // Pre-calculate required quantities across all direct products and combo components
+            $requiredQuantities = [];
+            foreach ($validated['items'] as $itemData) {
+                $qty = (int) $itemData['quantity'];
+                $requiredQuantities[$itemData['product_id']] = ($requiredQuantities[$itemData['product_id']] ?? 0) + $qty;
+
+                $prod = Product::with('comboItems')->find($itemData['product_id']);
+                if ($prod && $prod->is_combo) {
+                    foreach ($prod->comboItems as $ci) {
+                        $compQty = $ci->quantity * $qty;
+                        $requiredQuantities[$ci->item_product_id] = ($requiredQuantities[$ci->item_product_id] ?? 0) + $compQty;
+                    }
+                }
+            }
+
+            // Lock products and validate stock sufficiency
+            $lockedProducts = [];
+            foreach (array_keys($requiredQuantities) as $productId) {
+                $lockedProducts[$productId] = Product::lockForUpdate()->with('comboItems.itemProduct')->findOrFail($productId);
+                $needed = $requiredQuantities[$productId];
+                if ($lockedProducts[$productId]->stock_quantity < $needed) {
+                    throw ValidationException::withMessages([
+                        'items' => ["Not enough stock for {$lockedProducts[$productId]->name}. Required: {$needed}, Available: {$lockedProducts[$productId]->stock_quantity}"],
+                    ]);
+                }
             }
 
             $totalQuantity = 0;
@@ -204,14 +278,8 @@ class CheckoutApiController extends Controller
             $discountAmount = max(0.0, (float) ($validated['discount_amount'] ?? 0));
 
             foreach ($validated['items'] as $itemData) {
-                $product = Product::lockForUpdate()->findOrFail($itemData['product_id']);
+                $product = $lockedProducts[$itemData['product_id']];
                 $qty = (int) $itemData['quantity'];
-
-                if ($product->stock_quantity < $qty) {
-                    throw ValidationException::withMessages([
-                        'items' => ["Not enough stock for {$product->name}. Requested: {$qty}, Available: {$product->stock_quantity}"],
-                    ]);
-                }
 
                 $saleRate = isset($itemData['unit_sale_rate']) && $itemData['unit_sale_rate'] !== null && $itemData['unit_sale_rate'] !== ''
                     ? (float) $itemData['unit_sale_rate']
@@ -280,6 +348,24 @@ class CheckoutApiController extends Controller
                     'reference' => 'Order #'.$checkout->order_number.' (Updated)',
                     'notes' => 'Adjusted during order editing',
                 ]);
+
+                // If combo, deduct component stocks and record movements
+                if ($item['product']->is_combo) {
+                    foreach ($item['product']->comboItems as $comboItem) {
+                        $compDeductQty = $comboItem->quantity * $item['quantity'];
+                        $componentProduct = $lockedProducts[$comboItem->item_product_id] ?? Product::find($comboItem->item_product_id);
+                        if ($componentProduct) {
+                            $componentProduct->decrement('stock_quantity', $compDeductQty);
+                            StockMovement::create([
+                                'product_id' => $componentProduct->id,
+                                'type' => 'CHECK_OUT',
+                                'quantity' => -$compDeductQty,
+                                'reference' => 'Order #'.$checkout->order_number.' (Updated)',
+                                'notes' => '[COMBO: '.$item['product']->name.'] Adjusted during order editing',
+                            ]);
+                        }
+                    }
+                }
             }
 
             $status = $validated['status'];
@@ -315,7 +401,7 @@ class CheckoutApiController extends Controller
             ]);
         });
 
-        return new CheckoutResource($checkout->fresh('items.product'));
+        return new CheckoutResource($checkout->fresh('items.product.comboItems.itemProduct'));
     }
 
     public function destroy(Checkout $checkout): JsonResponse
@@ -334,6 +420,23 @@ class CheckoutApiController extends Controller
                         'reference' => 'Cancelled Order #'.$orderNumber,
                         'notes' => 'Stock restored after order deletion',
                     ]);
+
+                    if ($item->product->is_combo) {
+                        foreach ($item->product->comboItems as $comboItem) {
+                            if ($comboItem->itemProduct) {
+                                $compRestoreQty = $comboItem->quantity * $item->quantity;
+                                $comboItem->itemProduct->increment('stock_quantity', $compRestoreQty);
+
+                                StockMovement::create([
+                                    'product_id' => $comboItem->item_product_id,
+                                    'type' => 'RETURN',
+                                    'quantity' => $compRestoreQty,
+                                    'reference' => 'Cancelled Order #'.$orderNumber,
+                                    'notes' => '[COMBO: '.$item->product->name.'] Stock restored after order deletion',
+                                ]);
+                            }
+                        }
+                    }
                 }
             }
 

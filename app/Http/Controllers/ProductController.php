@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\ActivityLog;
+use App\Models\ComboItem;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -24,13 +25,14 @@ class ProductController extends Controller
         if (! in_array($perPage, [10, 20, 25, 50, 100, 1000], true)) {
             $perPage = 20;
         }
-        $products = $query->with('user')->paginate($perPage)->withQueryString();
+        $products = $query->with(['user', 'comboItems.itemProduct'])->paginate($perPage)->withQueryString();
 
         $stats = [
             'total' => Product::count(),
             'in_stock' => Product::where('stock_quantity', '>', 0)->count(),
             'low_stock' => Product::where('stock_quantity', '>', 0)->whereColumn('stock_quantity', '<=', 'low_stock_threshold')->count(),
             'out_of_stock' => Product::where('stock_quantity', '<=', 0)->count(),
+            'combos' => Product::where('is_combo', true)->count(),
         ];
 
         $users = User::orderBy('name')->get();
@@ -152,6 +154,14 @@ class ProductController extends Controller
             }
         }
 
+        if ($productType = $request->input('product_type')) {
+            if ($productType === 'combo') {
+                $query->where('is_combo', true);
+            } elseif ($productType === 'regular') {
+                $query->where('is_combo', false);
+            }
+        }
+
         if ($userId = $request->input('user_id')) {
             $query->where('user_id', $userId);
         }
@@ -190,12 +200,19 @@ class ProductController extends Controller
 
     public function create(): View
     {
-        return view('products.create');
+        $individualProducts = Product::where('is_combo', false)->orderBy('name')->get();
+
+        return view('products.create', compact('individualProducts'));
     }
 
     public function store(StoreProductRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+        $isCombo = $request->boolean('is_combo');
+        $comboItems = $validated['combo_items'] ?? [];
+        unset($validated['combo_items']);
+
+        $validated['is_combo'] = $isCombo;
 
         if ($request->hasFile('photo')) {
             $validated['photo_path'] = Product::processImage($request->file('photo'));
@@ -207,19 +224,40 @@ class ProductController extends Controller
 
         $product = Product::create($validated);
 
-        ActivityLog::record('PRODUCT_CREATED', "Created product '{$product->name}' ({$product->product_number}) with {$product->stock_quantity} units.");
+        if ($isCombo && ! empty($comboItems)) {
+            foreach ($comboItems as $item) {
+                if (! empty($item['product_id']) && ! empty($item['quantity'])) {
+                    ComboItem::create([
+                        'combo_product_id' => $product->id,
+                        'item_product_id' => $item['product_id'],
+                        'quantity' => max(1, (int) $item['quantity']),
+                    ]);
+                }
+            }
+        }
 
-        return redirect()->route('products.index')->with('success', "Product '{$product->name}' created successfully.");
+        $comboMsg = $isCombo ? ' (Combo Bundle)' : '';
+        ActivityLog::record('PRODUCT_CREATED', "Created product '{$product->name}'{$comboMsg} ({$product->product_number}) with {$product->stock_quantity} units.");
+
+        return redirect()->route('products.index')->with('success', "Product '{$product->name}'{$comboMsg} created successfully.");
     }
 
     public function edit(Product $product): View
     {
-        return view('products.edit', compact('product'));
+        $product->load('comboItems.itemProduct');
+        $individualProducts = Product::where('is_combo', false)->where('id', '!=', $product->id)->orderBy('name')->get();
+
+        return view('products.edit', compact('product', 'individualProducts'));
     }
 
     public function update(UpdateProductRequest $request, Product $product): RedirectResponse
     {
         $validated = $request->validated();
+        $isCombo = $request->boolean('is_combo');
+        $comboItems = $validated['combo_items'] ?? [];
+        unset($validated['combo_items']);
+
+        $validated['is_combo'] = $isCombo;
 
         if ($request->hasFile('photo')) {
             if ($product->photo_path && ! str_starts_with($product->photo_path, 'data:') && Storage::disk('public')->exists($product->photo_path)) {
@@ -234,9 +272,24 @@ class ProductController extends Controller
 
         $product->update($validated);
 
-        ActivityLog::record('PRODUCT_UPDATED', "Updated product '{$product->name}' ({$product->product_number}).");
+        // Sync combo items
+        $product->comboItems()->delete();
+        if ($isCombo && ! empty($comboItems)) {
+            foreach ($comboItems as $item) {
+                if (! empty($item['product_id']) && ! empty($item['quantity'])) {
+                    ComboItem::create([
+                        'combo_product_id' => $product->id,
+                        'item_product_id' => $item['product_id'],
+                        'quantity' => max(1, (int) $item['quantity']),
+                    ]);
+                }
+            }
+        }
 
-        return redirect()->route('products.index')->with('success', "Product '{$product->name}' updated successfully.");
+        $comboMsg = $isCombo ? ' (Combo Bundle)' : '';
+        ActivityLog::record('PRODUCT_UPDATED', "Updated product '{$product->name}'{$comboMsg} ({$product->product_number}).");
+
+        return redirect()->route('products.index')->with('success', "Product '{$product->name}'{$comboMsg} updated successfully.");
     }
 
     public function destroy(Product $product): RedirectResponse

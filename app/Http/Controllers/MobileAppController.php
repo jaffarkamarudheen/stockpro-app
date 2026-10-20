@@ -9,7 +9,7 @@ class MobileAppController extends Controller
 {
     public function index(): View
     {
-        $products = Product::orderBy('name')->get();
+        $products = Product::with('comboItems.itemProduct')->orderBy('name')->get();
 
         $enquirySources = [
             'WhatsApp',

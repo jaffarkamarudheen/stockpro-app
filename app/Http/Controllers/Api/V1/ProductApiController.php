@@ -16,7 +16,7 @@ class ProductApiController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Product::query()->latest();
+        $query = Product::query()->with('comboItems.itemProduct')->latest();
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search): void {
@@ -34,6 +34,14 @@ class ProductApiController extends Controller
             } elseif ($status === 'low_stock') {
                 $query->where('stock_quantity', '>', 0)
                     ->whereColumn('stock_quantity', '<=', 'low_stock_threshold');
+            }
+        }
+
+        if ($productType = $request->input('product_type')) {
+            if ($productType === 'combo') {
+                $query->where('is_combo', true);
+            } elseif ($productType === 'regular') {
+                $query->where('is_combo', false);
             }
         }
 

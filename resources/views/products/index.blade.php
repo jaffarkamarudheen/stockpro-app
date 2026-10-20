@@ -6,7 +6,7 @@
 @section('content')
 <div class="space-y-6">
     <!-- Top Statistics Badges -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
         <a href="{{ route('products.index') }}" class="p-4 rounded-xl bg-white border border-slate-200 shadow-xs hover:border-indigo-300 transition">
             <div class="flex items-center justify-between text-slate-500 mb-1">
                 <span class="text-xs font-semibold uppercase tracking-wider">Total Products</span>
@@ -38,6 +38,14 @@
             </div>
             <div class="text-2xl font-bold text-rose-700">{{ $stats['out_of_stock'] }}</div>
         </a>
+
+        <a href="{{ route('products.index', ['product_type' => 'combo']) }}" class="p-4 rounded-xl bg-white border border-slate-200 shadow-xs hover:border-purple-300 transition">
+            <div class="flex items-center justify-between text-slate-500 mb-1">
+                <span class="text-xs font-semibold uppercase tracking-wider text-purple-600">Combos / Bundles</span>
+                <i class="fa-solid fa-layer-group text-purple-500"></i>
+            </div>
+            <div class="text-2xl font-bold text-purple-700">{{ $stats['combos'] ?? 0 }}</div>
+        </a>
     </div>
 
     <!-- Filter & Search Toolbar -->
@@ -51,6 +59,13 @@
                        placeholder="Search name, code, quality..."
                        class="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
+
+            <!-- Product Type (Single / Combo) -->
+            <select name="product_type" onchange="this.form.submit()" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-medium text-slate-700">
+                <option value="all">All Types</option>
+                <option value="regular" {{ request('product_type') === 'regular' ? 'selected' : '' }}>Single Products</option>
+                <option value="combo" {{ request('product_type') === 'combo' ? 'selected' : '' }}>Combos / Bundles</option>
+            </select>
 
             <!-- Stock Status -->
             <select name="status" onchange="this.form.submit()" class="py-2 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-medium text-slate-700">
@@ -152,7 +167,14 @@
 
                             <!-- Product Name & Number -->
                             <td class="px-4 py-3">
-                                <div class="font-bold text-slate-800 text-sm">{{ $product->name }}</div>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-bold text-slate-800 text-sm">{{ $product->name }}</span>
+                                    @if ($product->is_combo)
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-purple-100 text-purple-700 border border-purple-200">
+                                            <i class="fa-solid fa-layer-group text-[9px]"></i> Combo Set
+                                        </span>
+                                    @endif
+                                </div>
                                 <div class="flex items-center gap-1.5 flex-wrap mt-1">
                                     <span class="font-mono text-xs text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded">
                                         {{ $product->product_number }}
@@ -167,6 +189,20 @@
                                         <i class="fa-regular fa-calendar text-[9px]"></i> {{ $product->created_at->format('M d, Y') }}
                                     </span>
                                 </div>
+
+                                @if ($product->is_combo && $product->comboItems->count() > 0)
+                                    <div class="mt-1.5 p-1.5 rounded bg-purple-50/70 border border-purple-100 text-[11px] text-purple-900">
+                                        <div class="font-semibold text-purple-700 text-[10px] uppercase tracking-wide">Included in set:</div>
+                                        <div class="flex flex-wrap gap-1 mt-1">
+                                            @foreach ($product->comboItems as $ci)
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-white border border-purple-200 text-[11px] text-slate-700">
+                                                    <strong class="text-purple-600 mr-1">{{ $ci->quantity }}x</strong> {{ $ci->itemProduct?->name ?? 'Product #'.$ci->item_product_id }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+
                                 @if ($product->description)
                                     <div class="text-xs text-slate-500 line-clamp-2 max-w-sm mt-1 bg-slate-50 p-1.5 rounded border border-slate-100">{{ $product->description }}</div>
                                 @endif
@@ -225,6 +261,12 @@
                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                         {{ $product->stock_quantity }} in stock
                                     </span>
+                                @endif
+
+                                @if ($product->is_combo)
+                                    <div class="text-[10px] text-slate-500 mt-1" title="Stock assembleable from constituent components">
+                                        Max from parts: <strong>{{ $product->effective_stock }}</strong>
+                                    </div>
                                 @endif
                             </td>
 

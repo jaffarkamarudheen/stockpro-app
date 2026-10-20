@@ -6,12 +6,46 @@
 @section('content')
 <div class="max-w-4xl mx-auto"
      x-data="{
-        purchaseRate: {{ (float) $product->purchase_rate }},
-        saleRate: {{ (float) $product->sale_rate }},
-        otherRate: {{ (float) $product->other_rate }},
-        stockQty: {{ (int) $product->stock_quantity }},
+        purchaseRate: {{ (float) old('purchase_rate', $product->purchase_rate) }},
+        saleRate: {{ (float) old('sale_rate', $product->sale_rate) }},
+        otherRate: {{ (float) old('other_rate', $product->other_rate) }},
+        stockQty: {{ (int) old('stock_quantity', $product->stock_quantity) }},
         photoPreview: '{{ $product->photo_url }}',
         photoUrlInput: '{{ str_starts_with($product->photo_path ?? '', 'http') ? $product->photo_path : '' }}',
+        isCombo: {{ old('is_combo', $product->is_combo ? '1' : '0') ? 'true' : 'false' }},
+        comboItems: {{ Js::from(old('combo_items', $product->comboItems->map(fn($ci) => ['product_id' => $ci->item_product_id, 'quantity' => $ci->quantity]))) }},
+        availableProducts: {{ Js::from($individualProducts->map(fn($p) => ['id' => $p->id, 'name' => $p->name, 'product_number' => $p->product_number, 'stock_quantity' => $p->stock_quantity, 'purchase_rate' => (float)$p->purchase_rate, 'sale_rate' => (float)$p->sale_rate])) }},
+        addComponent() {
+            if (this.availableProducts.length > 0) {
+                this.comboItems.push({
+                    product_id: this.availableProducts[0].id,
+                    quantity: 1
+                });
+            }
+        },
+        removeComponent(index) {
+            this.comboItems.splice(index, 1);
+        },
+        calcComponentPurchaseRate() {
+            let total = 0;
+            this.comboItems.forEach(ci => {
+                const p = this.availableProducts.find(prod => prod.id == ci.product_id);
+                if (p) {
+                    total += (p.purchase_rate * parseInt(ci.quantity || 1));
+                }
+            });
+            this.purchaseRate = total.toFixed(2);
+        },
+        calcComponentSaleRate() {
+            let total = 0;
+            this.comboItems.forEach(ci => {
+                const p = this.availableProducts.find(prod => prod.id == ci.product_id);
+                if (p) {
+                    total += (p.sale_rate * parseInt(ci.quantity || 1));
+                }
+            });
+            this.saleRate = total.toFixed(2);
+        },
         get unitProfit() {
             return (parseFloat(this.saleRate || 0) - parseFloat(this.purchaseRate || 0) - parseFloat(this.otherRate || 0)).toFixed(2);
         },
@@ -208,6 +242,75 @@
                             <input type="number" min="1" id="low_stock_threshold" name="low_stock_threshold"
                                    value="{{ old('low_stock_threshold', $product->low_stock_threshold) }}"
                                    class="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Combo / Bundle Product Option Card -->
+                    <div class="p-4 rounded-xl border border-indigo-200 bg-indigo-50/50 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="relative inline-flex items-center cursor-pointer gap-3">
+                                <input type="checkbox" name="is_combo" value="1" x-model="isCombo" class="sr-only peer">
+                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                <div>
+                                    <span class="text-sm font-bold text-slate-800">Combo / Bundle Product</span>
+                                    <span class="block text-xs text-slate-500">Sell multiple individual items bundled together (e.g. Earring + Locket set). Stock deducts from both!</span>
+                                </div>
+                            </label>
+                            <span x-show="isCombo" class="px-2.5 py-0.5 text-xs font-bold uppercase rounded-full bg-indigo-100 text-indigo-700">
+                                Combo Active
+                            </span>
+                        </div>
+
+                        <!-- Interactive Component List -->
+                        <div x-show="isCombo" x-cloak class="pt-3 border-t border-indigo-200/60 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Constituent Items</h4>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" @click="calcComponentPurchaseRate()" class="px-2 py-1 text-[11px] font-semibold text-indigo-700 bg-white border border-indigo-300 rounded hover:bg-indigo-50 transition" title="Sum constituent purchase rates">
+                                        Auto Purchase Cost
+                                    </button>
+                                    <button type="button" @click="calcComponentSaleRate()" class="px-2 py-1 text-[11px] font-semibold text-indigo-700 bg-white border border-indigo-300 rounded hover:bg-indigo-50 transition" title="Sum constituent sale rates">
+                                        Auto Sale Rate
+                                    </button>
+                                    <button type="button" @click="addComponent()" class="px-2.5 py-1 text-xs font-semibold text-white bg-indigo-600 rounded hover:bg-indigo-700 transition flex items-center gap-1">
+                                        <i class="fa-solid fa-plus text-[10px]"></i> Add Component
+                                    </button>
+                                </div>
+                            </div>
+
+                            <template x-if="comboItems.length === 0">
+                                <div class="p-4 text-center border-2 border-dashed border-indigo-200 rounded-lg text-xs text-slate-500 bg-white">
+                                    No items added yet. Click <strong>Add Component</strong> to select constituent products for this combo.
+                                </div>
+                            </template>
+
+                            <div class="space-y-2">
+                                <template x-for="(item, index) in comboItems" :key="index">
+                                    <div class="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg shadow-xs">
+                                        <div class="flex-1">
+                                            <label class="block text-[10px] font-semibold uppercase text-slate-400 mb-1">Component Product</label>
+                                            <select :name="'combo_items[' + index + '][product_id]'" x-model="item.product_id"
+                                                    class="w-full text-xs px-2.5 py-1.5 rounded border border-slate-300 focus:ring-1 focus:ring-indigo-500 outline-none">
+                                                <template x-for="prod in availableProducts" :key="prod.id">
+                                                    <option :value="prod.id" x-text="prod.name + ' (' + prod.product_number + ') - Stock: ' + prod.stock_quantity" :selected="prod.id == item.product_id"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+
+                                        <div class="w-24">
+                                            <label class="block text-[10px] font-semibold uppercase text-slate-400 mb-1">Qty in Set</label>
+                                            <input type="number" min="1" :name="'combo_items[' + index + '][quantity]'" x-model="item.quantity"
+                                                   class="w-full text-xs px-2.5 py-1.5 rounded border border-slate-300 focus:ring-1 focus:ring-indigo-500 outline-none">
+                                        </div>
+
+                                        <div class="pt-5">
+                                            <button type="button" @click="removeComponent(index)" class="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded transition" title="Remove component">
+                                                <i class="fa-solid fa-trash-can text-sm"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                     </div>
 

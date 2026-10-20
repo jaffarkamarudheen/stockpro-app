@@ -113,7 +113,12 @@
                                 </template>
                             </div>
                             <div>
-                                <span class="font-bold text-white text-sm block" x-text="p.name"></span>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-bold text-white text-sm block" x-text="p.name"></span>
+                                    <template x-if="p.is_combo">
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/40">Combo</span>
+                                    </template>
+                                </div>
                                 <span class="font-mono text-[11px] text-indigo-400 font-semibold" x-text="p.product_number"></span>
                             </div>
                         </div>
@@ -197,7 +202,12 @@
                             </template>
                         </div>
                         <span class="text-[11px] font-bold text-white line-clamp-1 w-full text-center" x-text="p.name"></span>
-                        <span class="font-mono text-[9px] text-indigo-400 font-semibold" x-text="p.product_number"></span>
+                        <div class="flex items-center gap-1 justify-center">
+                            <span class="font-mono text-[9px] text-indigo-400 font-semibold" x-text="p.product_number"></span>
+                            <template x-if="p.is_combo">
+                                <span class="px-1 py-0.2 rounded text-[8px] font-extrabold uppercase bg-purple-500/30 text-purple-300">Set</span>
+                            </template>
+                        </div>
                         <span class="text-[10px] font-bold text-emerald-400 mt-0.5" x-text="'₹' + parseFloat(p.sale_rate).toFixed(0)"></span>
                     </div>
                 </template>
@@ -222,6 +232,11 @@
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold"
                                   x-text="activeProduct.product_number"></span>
+                            <template x-if="activeProduct.is_combo">
+                                <span class="text-[11px] px-2 py-0.5 rounded font-extrabold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1">
+                                    <i class="fa-solid fa-layer-group text-[9px]"></i> Combo Set
+                                </span>
+                            </template>
                             <span class="text-[11px] px-2 py-0.5 rounded font-semibold bg-slate-800 text-slate-300"
                                   x-text="activeProduct.quality || 'Standard'"></span>
                             <template x-if="activeProduct.user_name">
@@ -232,6 +247,19 @@
                             </template>
                         </div>
                         <h3 class="text-base font-bold text-white mt-1.5 leading-snug" x-text="activeProduct.name"></h3>
+                        <template x-if="activeProduct.is_combo && activeProduct.combo_items && activeProduct.combo_items.length > 0">
+                            <div class="mt-2 p-2 rounded-lg bg-purple-950/40 border border-purple-800/40 text-xs text-purple-200">
+                                <div class="font-bold text-[10px] uppercase text-purple-400 mb-1">Set components:</div>
+                                <div class="flex flex-wrap gap-1">
+                                    <template x-for="ci in activeProduct.combo_items" :key="ci.id">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-900 border border-purple-700/50 text-[10px]">
+                                            <strong class="text-purple-400 mr-1" x-text="ci.quantity + 'x'"></strong>
+                                            <span x-text="ci.item_product ? ci.item_product.name : ('Product #' + ci.item_product_id)"></span>
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
                         <p class="text-xs text-slate-400 mt-1 line-clamp-2" x-text="activeProduct.description || 'No description provided.'"></p>
                     </div>
                 </div>
@@ -983,6 +1011,17 @@
                                 if (found) found.stock_quantity -= item.quantity;
                                 if (this.activeProduct && this.activeProduct.id === item.product.id) {
                                     this.activeProduct.stock_quantity -= item.quantity;
+                                }
+
+                                if (item.product.is_combo && item.product.combo_items) {
+                                    item.product.combo_items.forEach(ci => {
+                                        const comp = this.products.find(p => p.id === ci.item_product_id);
+                                        const compDeduct = (ci.quantity * item.quantity);
+                                        if (comp) comp.stock_quantity -= compDeduct;
+                                        if (this.activeProduct && this.activeProduct.id === ci.item_product_id) {
+                                            this.activeProduct.stock_quantity -= compDeduct;
+                                        }
+                                    });
                                 }
                             });
 

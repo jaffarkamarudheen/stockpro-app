@@ -229,8 +229,21 @@
                     @foreach ($checkout->items as $item)
                         <tr>
                             <td class="px-4 py-3.5">
-                                <div class="font-bold text-slate-800">{{ $item->product?->name ?: 'Item' }}</div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-slate-800">{{ $item->product?->name ?: 'Item' }}</span>
+                                    @if ($item->product?->is_combo)
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-purple-100 text-purple-700 border border-purple-200">
+                                            Combo Set
+                                        </span>
+                                    @endif
+                                </div>
                                 <div class="font-mono text-xs text-indigo-600">{{ $item->product?->product_number }}</div>
+                                @if ($item->product?->is_combo && $item->product->comboItems->count() > 0)
+                                    <div class="text-[11px] text-slate-500 mt-1">
+                                        <span class="font-semibold text-purple-700">Set includes:</span>
+                                        {{ $item->product->comboItems->map(fn($ci) => ($ci->quantity * $item->quantity) . 'x ' . ($ci->itemProduct?->name ?? 'Item'))->implode(', ') }}
+                                    </div>
+                                @endif
                             </td>
                             <td class="px-4 py-3.5 text-center font-bold text-slate-800">
                                 {{ $item->quantity }}
